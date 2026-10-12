@@ -328,20 +328,48 @@ canvas.chart{width:100%;height:200px;display:block}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ============================================================
-   StaySelect – v5 mit Bildergalerie (IndexedDB)
+   StaySelect – v6 mit 28 Unterkünften
    ============================================================ */
 
 const STORAGE_KEY = 'stayselect_v5';
 const SETTINGS_KEY = 'stayselect_settings_v5';
 
 const COORDS = {
-  'p-wallberg':[47.6637,11.7753],'p-weissach':[47.6906,11.7667],'p-bussi':[47.7167,11.7167],
-  'p-clubhaus':[47.7103,11.7583],'p-linde':[47.1400,10.5700],'p-cabinski':[47.0167,9.9500],
-  'p-alpechalets':[47.0333,9.9833],'p-reichhalter':[46.6167,11.1500],'p-arctic':[66.0000,20.0000],
-  'p-bissee':[54.1667,10.1000],'p-villa-saima':[61.3000,28.1000]
+  // Bestehende 11
+  'p-wallberg':[47.6637,11.7753],
+  'p-weissach':[47.6906,11.7667],
+  'p-bussi':[47.7167,11.7167],
+  'p-clubhaus':[47.7103,11.7583],
+  'p-linde':[47.1500,10.6833],
+  'p-cabinski':[47.0167,9.9500],
+  'p-alpechalets':[47.0333,9.9833],
+  'p-reichhalter':[46.6167,11.1500],
+  'p-arctic':[66.0000,20.0000],
+  'p-bissee':[54.1667,10.1000],
+  'p-villa-saima':[61.3000,28.1000],
+  // Neue 17
+  'p-mv574h0llw09a':[46.4983,11.3548],
+  'p-mv3nkusqronqm':[46.6167,11.1500],
+  'p-mv2l628qzei04':[46.6833,11.1333],
+  'p-mv2l3shep0gge':[46.8167,11.6667],
+  'p-mv2k46pnqyw4e':[54.3233,10.1228],
+  'p-mv2jza0x85ojj':[54.3667,9.0167],
+  'p-mv2juy80mu6pa':[47.1833,14.8167],
+  'p-mv2jpr1g31n5e':[47.7389,13.4478],
+  'p-mv2jkiaoebqpt':[54.4000,13.4000],
+  'p-mv2jfnhw8zijo':[46.7667,11.1667],
+  'p-mv2j5utucme0j':[53.7072,7.1581],
+  'p-mv2iz0dez4m25':[46.9000,11.9000],
+  'p-mv2iuuuk08jgs':[46.8167,11.6667],
+  'p-mv2ircrc5qtl6':[57.1058,12.2500],
+  'p-mv2ilztrka55n':[46.4167,11.4333],
+  'p-mv2ihd4j1tpvh':[46.4667,11.2667],
+  'p-mv2ifo65q52v5':[49.7167,6.8500],
+  'p-mv2i7jporgrbg':[46.6333,11.2000]
 };
 
 const SEED_PROPERTIES = [
+  // ============ NEUE UNTERKÜNFTE ============
   { id:'p-mv574h0llw09a', name:'Parkhotel Mondschein', property_type:'hotel', country:'Südtirol', region:null, city:'Bozen', address:null,
     url:'https://www.parkhotelmondschein.com/de/hotel', provider:'manual',
     description:'Pool',
@@ -505,9 +533,7 @@ const SEED_PROPERTIES = [
     booking_checkin:'2026-11-08', booking_checkout:'2026-11-12', notes:'', is_favorite:true, collections:[],
     image_urls:[], created_at:'2026-10-10', price_history:[{price:300,date:'2026-10-11'}] },
 
-  // ============================================================
-  // BESTEHENDE UNTERKÜNFTE (11)
-  // ============================================================
+  // ============ BESTEHENDE UNTERKÜNFTE ============
   { id:'p-wallberg', name:'Wallberg-Haus Bergrestaurant', property_type:'gasthof', country:'Deutschland', region:'Bayern', city:'Rottach-Egern', address:'Wallberg 1, 83700 Rottach-Egern',
     url:'https://wallberg-haus.de/bergrestaurant/', provider:'official',
     description:'Bergrestaurant auf 1.512 m am Hausberg des Tegernsees. Bayerische Küche mit Käsespätzle, Kaiserschmarrn und Bergfrühstück.',
@@ -621,9 +647,7 @@ const state = {
   galleryIndex:{}, lightbox:null, uploadingFor:null
 };
 
-/* ============================================================
-   IMAGE STORAGE (IndexedDB)
-   ============================================================ */
+/* ============ IMAGE STORAGE (IndexedDB) ============ */
 const imgDB = (() => {
   const DB_NAME='stayselect_images', STORE='images';
   let dbPromise=null;
@@ -798,9 +822,7 @@ async function deleteImage(propertyId,imageId,isExternal){
   toast('Bild gelöscht');
 }
 
-/* ============================================================
-   Galerie / Lightbox
-   ============================================================ */
+/* ============ Galerie / Lightbox ============ */
 function galleryNav(propertyId, delta){
   const images = imageCache.get(propertyId)||[];
   if(!images.length) return;
@@ -872,9 +894,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-/* ============================================================
-   Galerie-Renderer
-   ============================================================ */
+/* ============ Galerie-Renderer ============ */
 function renderGallery(propertyId){
   const images = imageCache.get(propertyId)||[];
   if(!images.length){
@@ -935,9 +955,7 @@ function renderImageUpload(propertyId){
   `;
 }
 
-/* ============================================================
-   Utilities
-   ============================================================ */
+/* ============ Utilities ============ */
 function uid(){ return 'p-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function escapeHtml(s){
   if(s==null) return '';
@@ -988,9 +1006,7 @@ function totalForProperty(p){
   return Math.round(p.base_price*b.nights*100)/100;
 }
 
-/* ============================================================
-   Persistence + Migration
-   ============================================================ */
+/* ============ Persistence ============ */
 function migrateProperty(p){
   if(!p.price_history) p.price_history=[];
   if(!p.collections) p.collections=[];
@@ -1040,9 +1056,7 @@ function save(){
 }
 function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY,JSON.stringify(state.settings)); }catch(e){} }
 
-/* ============================================================
-   Theme
-   ============================================================ */
+/* ============ Theme ============ */
 function applyTheme(){
   document.documentElement.setAttribute('data-theme',state.settings.theme||'light');
   const lbl=document.getElementById('themeLabel');
@@ -1053,9 +1067,7 @@ function toggleTheme(){
   saveSettings(); applyTheme();
 }
 
-/* ============================================================
-   Scoring
-   ============================================================ */
+/* ============ Scoring ============ */
 function computeScore(p){
   const w=state.settings.weights;
   const prices=state.properties.map(x=>x.base_price).filter(v=>v!=null);
@@ -1081,9 +1093,7 @@ function computeScore(p){
 }
 function scoreClass(s){ if(s==null) return ''; if(s>=75) return 'high'; if(s>=50) return 'mid'; return 'low'; }
 
-/* ============================================================
-   Rendering
-   ============================================================ */
+/* ============ Rendering ============ */
 function setView(view){
   state.currentView=view;
   document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
@@ -1111,7 +1121,6 @@ function render(){
   }
   document.getElementById('lastUpdated').textContent=new Date().toLocaleString('de-DE');
   attachHandlers();
-  // Chart nach dem DOM-Insert zeichnen
   setTimeout(()=>{
     const p = state.properties.find(x=>x.id===state.currentId);
     if(state.currentView==='detail' && p){
@@ -1124,7 +1133,6 @@ function render(){
       if(c && hp) drawChart(c,hp.price_history||[]);
     }
   },30);
-  // Async Bild-Nachladen
   if(!renderScheduled){
     renderScheduled=true;
     setTimeout(async ()=>{
@@ -1140,9 +1148,7 @@ function attachHandlers(){
   document.querySelectorAll('.nav-item').forEach(btn=>{ btn.onclick=()=>setView(btn.dataset.view); });
 }
 
-/* ============================================================
-   Dashboard
-   ============================================================ */
+/* ============ Dashboard ============ */
 function renderDashboard(){
   const props=state.properties;
   if(!props.length){
@@ -1202,9 +1208,7 @@ function renderDashboard(){
   `;
 }
 
-/* ============================================================
-   Property Card
-   ============================================================ */
+/* ============ Property Card ============ */
 function renderPropertyCard(p){
   const score=computeScore(p);
   const country=p.country||'';
@@ -1249,9 +1253,7 @@ function renderPropertyCard(p){
   `;
 }
 
-/* ============================================================
-   Properties View
-   ============================================================ */
+/* ============ Properties View ============ */
 function renderProperties(){
   const filtered=applyFilters(state.properties);
   const countries=[...new Set(state.properties.map(p=>p.country).filter(Boolean))].sort();
@@ -1315,9 +1317,7 @@ function applyFilters(list){
 function updateFilter(k,v){ state.filters[k]=v; render(); }
 function resetFilters(){ state.filters={search:'',country:'',type:'',mealPlan:'',maxPrice:'',spaOnly:false,favoriteOnly:false,collection:''}; render(); }
 
-/* ============================================================
-   Add View
-   ============================================================ */
+/* ============ Add View ============ */
 function renderAddView(){
   return `
     <div class="page-header"><div class="page-title"><small>Hinzufügen</small><h1>Unterkunft hinzufügen</h1></div></div>
@@ -1450,13 +1450,10 @@ function addPropertyFromForm(form){
   state.properties.unshift(p);
   save();
   toast('Unterkunft gespeichert – jetzt Bilder hinzufügen');
-  // Direkt zur Detailseite zum Bilder hinzufügen
   setTimeout(()=>{ openDetail(p.id); }, 300);
 }
 
-/* ============================================================
-   Import
-   ============================================================ */
+/* ============ Import ============ */
 function detectProvider(url){
   try{
     const u=new URL(url), h=u.hostname;
@@ -1575,14 +1572,11 @@ function extractNameFromUrl(url){
   }catch{ return 'Unterkunft'; }
 }
 
-/* ============================================================
-   Detail View
-   ============================================================ */
+/* ============ Detail View ============ */
 function openDetail(id){
   state.currentId=id;
   state.currentView='detail';
   document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.remove('active'));
-  // Wenn noch nicht geladen, laden
   if(!imageCache.has(id)) loadImages(id).then(()=>render());
   render();
 }
@@ -1612,7 +1606,6 @@ function renderDetail(){
     </div>
 
     ${renderGallery(p.id)}
-
     ${renderImageUpload(p.id)}
 
     <div class="detail-grid">
@@ -1810,7 +1803,6 @@ function openEditModal(id){
       </div>
     </div>`;
   document.getElementById('modalRoot').innerHTML=html;
-  // Bilder für den Upload-Bereich laden
   if(!imageCache.has(p.id)) loadImages(p.id).then(()=>{});
 }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
@@ -1843,9 +1835,7 @@ function saveEdit(id,form){
   save(); closeModal(); toast('Gespeichert'); render();
 }
 
-/* ============================================================
-   Compare View
-   ============================================================ */
+/* ============ Compare View ============ */
 function renderCompare(){
   const props=state.properties;
   if(!props.length) return `<div class="empty-state"><h3>Keine Unterkünfte zum Vergleichen</h3></div>`;
@@ -1973,9 +1963,7 @@ function toggleCompare(id){
   render();
 }
 
-/* ============================================================
-   Search View
-   ============================================================ */
+/* ============ Search View ============ */
 function renderSearchView(){
   const sc=state.searchContext||{checkIn:'',checkOut:'',adults:2,children:0,rooms:1,maxBudget:''};
   const nights=nightsBetween(sc.checkIn,sc.checkOut);
@@ -2082,9 +2070,7 @@ function renderSearchResults(){
   `;
 }
 
-/* ============================================================
-   Map View
-   ============================================================ */
+/* ============ Map View ============ */
 function renderMapView(){
   return `
     <div class="page-header">
@@ -2124,9 +2110,7 @@ function initMap(){
   if(bounds.length) state.mapInstance.fitBounds(bounds,{padding:[40,40],maxZoom:8});
 }
 
-/* ============================================================
-   History View
-   ============================================================ */
+/* ============ History View ============ */
 function renderHistoryView(){
   const propsWithHistory=state.properties.filter(p=>(p.price_history||[]).length>0);
   return `
@@ -2168,9 +2152,7 @@ function renderHistoryChart(propsWithHistory){
   return `<h3 style="margin-bottom:0.75rem;font-size:1.1rem">${escapeHtml(p.name)}</h3><canvas id="detailChart" class="chart"></canvas>`;
 }
 
-/* ============================================================
-   Chart
-   ============================================================ */
+/* ============ Chart ============ */
 function drawChart(canvas,history){
   if(!canvas||!history||history.length<2) return;
   const dpr=window.devicePixelRatio||1;
@@ -2225,9 +2207,7 @@ function drawChart(canvas,history){
   });
 }
 
-/* ============================================================
-   Collections View
-   ============================================================ */
+/* ============ Collections View ============ */
 function renderCollectionsView(){
   const c=state.collections;
   return `
@@ -2252,9 +2232,7 @@ function renderCollectionsView(){
   `;
 }
 
-/* ============================================================
-   Settings
-   ============================================================ */
+/* ============ Settings ============ */
 function renderSettings(){
   const w=state.settings.weights;
   const total=w.price_value+w.dinner_quality+w.spa_wellness+w.property_quality+w.personal_rating;
@@ -2312,9 +2290,7 @@ function updateWeight(key,value){
   saveSettings();
 }
 
-/* ============================================================
-   Import/Export
-   ============================================================ */
+/* ============ Import/Export ============ */
 function exportData(){
   const data={
     properties:state.properties, collections:state.collections, settings:state.settings,
@@ -2352,7 +2328,6 @@ function importData(event){
 }
 async function resetData(){
   if(!confirm('Alle Daten zurücksetzen? Auch alle hochgeladenen Bilder werden gelöscht.')) return;
-  // Bilder löschen
   try{
     for(const p of state.properties) await imgDB.delByProperty(p.id);
   }catch(e){}
@@ -2371,9 +2346,7 @@ async function resetData(){
 }
 function printReport(){ window.print(); }
 
-/* ============================================================
-   Init
-   ============================================================ */
+/* ============ Init ============ */
 load();
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click',()=>setView(btn.dataset.view));
