@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StaySelect – My Hotel Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root{
+  --forest-900:#1a342b; --forest-800:#1e3f33; --forest-700:#254e3f;
+  --forest-600:#2e624e; --forest-500:#3f7c63; --forest-100:#dcebe2;
+  --cream-100:#faf7ef; --cream-50:#fdfcf8;
+  --sand-100:#f0e9dc; --sand-200:#e0d3bd; --sand-300:#cbb89a;
+  --taupe-500:#786b5e; --taupe-600:#5f5449;
+  --anthracite-800:#141618; --anthracite-700:#1f2224;
+  --anthracite-600:#2f3336; --anthracite-400:#73787d;
+  --brass-400:#cba94f; --brass-500:#b8933a; --brass-100:#f7efd9;
+  --success:#2e7d4f; --success-light:#e6f4ea;
+  --warning:#b8860b; --warning-light:#fdf3e0;
+  --danger:#b3261e; --danger-light:#fdeaea;
+  --info:#1a73e8; --info-light:#e8f0fe;
+  --bg:var(--cream-100); --surface:var(--cream-50); --surface-2:var(--sand-100);
+  --border:var(--sand-200); --text:var(--anthracite-700); --text-dim:var(--taupe-500);
+}
+[data-theme="dark"]{
+  --bg:#10171a; --surface:#182228; --surface-2:#1f2d33;
+  --border:#2a3a42; --text:#e8ecef; --text-dim:#8fa0a8;
+  --cream-50:#182228; --cream-100:#10171a; --sand-100:#1f2d33; --sand-200:#2a3a42; --sand-300:#3a4d56;
+  --anthracite-800:#e8ecef; --anthracite-700:#d8dfe3; --anthracite-600:#a8b6bd; --anthracite-400:#7a8b93;
+  --forest-100:#1e3f33; --forest-700:#3f7c63; --forest-800:#4a9179; --forest-900:#0d1f19;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',Georgia,serif;color:var(--anthracite-800);font-weight:500;letter-spacing:-0.01em}
+h1{font-size:2.4rem;line-height:1.15}
+h2{font-size:1.8rem;line-height:1.2}
+h3{font-size:1.3rem}
+a{color:var(--forest-700);text-decoration:none;transition:color .2s}
+a:hover{color:var(--forest-800);text-decoration:underline;text-underline-offset:4px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:1rem;color:var(--text);background:var(--surface);border:1px solid var(--sand-300);border-radius:6px;padding:0.6rem 0.8rem}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--forest-500);box-shadow:0 0 0 2px var(--forest-100)}
+input[readonly]{background:var(--sand-100);color:var(--text-dim);cursor:not-allowed}
+
+.app{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--forest-900);color:#faf7ef;padding:2rem 1.25rem;position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:50;overflow-y:auto}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#fdfcf8;letter-spacing:0.02em}
+.logo-sub{font-size:0.7rem;color:var(--sand-300);text-transform:uppercase;letter-spacing:0.18em;margin:0.25rem 0 2rem}
+.nav{display:flex;flex-direction:column;gap:0.15rem;flex:1}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.9rem;border-radius:6px;color:var(--sand-200);font-size:0.9rem;text-align:left;width:100%;transition:all .2s;cursor:pointer}
+.nav-item:hover{background:var(--forest-800);color:#fdfcf8}
+.nav-item.active{background:var(--forest-700);color:#fdfcf8;font-weight:500}
+.nav-icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;flex-shrink:0}
+.nav-divider{height:1px;background:var(--forest-800);margin:0.75rem 0}
+.sidebar-footer{font-size:0.7rem;color:var(--sand-300);padding-top:1rem;border-top:1px solid var(--forest-800);margin-top:1rem}
+.sidebar-footer button{color:var(--sand-200);font-size:0.75rem;text-align:left;padding:0.3rem 0;display:flex;align-items:center;gap:0.5rem;width:100%}
+.sidebar-footer button:hover{color:#fdfcf8}
+
+.main{flex:1;margin-left:260px;padding:2.5rem 3rem 4rem;max-width:1600px}
+.page-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1.5rem;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.page-title small{display:block;font-family:'Inter',sans-serif;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.18em;color:var(--text-dim);font-weight:500;margin-bottom:0.5rem}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.65rem 1.25rem;border-radius:6px;font-size:0.875rem;font-weight:500;letter-spacing:0.01em;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--forest-700);color:#fdfcf8}
+.btn-primary:hover{background:var(--forest-800)}
+.btn-secondary{background:transparent;border:1px solid var(--sand-300);color:var(--text)}
+.btn-secondary:hover{background:var(--sand-100)}
+.btn-ghost{background:transparent;color:var(--text-dim)}
+.btn-ghost:hover{background:var(--sand-100);color:var(--text)}
+.btn-danger{background:var(--danger);color:white}
+.btn-danger:hover{background:#8a1c16}
+.btn-sm{padding:0.4rem 0.85rem;font-size:0.8rem}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 2px rgba(20,22,24,0.04);transition:box-shadow .2s,transform .2s}
+.card:hover{box-shadow:0 4px 16px rgba(20,22,24,0.08)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2.5rem}
+.stat-card{padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);font-weight:500;margin-bottom:0.75rem}
+.stat-value{font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--forest-800);line-height:1;font-weight:500}
+.stat-sub{font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem}
+
+.properties-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem}
+.property-card{overflow:hidden;display:flex;flex-direction:column;cursor:pointer}
+.property-image{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--sand-100),var(--sand-200))}
+.property-image .initials{font-family:'Cormorant Garamond',serif;font-size:3rem;color:var(--taupe-500);text-align:center;padding:1rem;line-height:1;font-weight:600;letter-spacing:0.05em}
+.property-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.property-image .flag{position:absolute;top:0.75rem;left:0.75rem;background:rgba(253,252,248,0.95);color:var(--forest-800);padding:0.2rem 0.6rem;border-radius:20px;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;z-index:2}
+[data-theme="dark"] .property-image .flag{background:rgba(24,34,40,0.95);color:#fdfcf8}
+.image-count{position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(20,22,24,0.75);color:white;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600;z-index:2;display:flex;align-items:center;gap:0.3rem}
+.fav-badge{position:absolute;top:0.75rem;right:0.75rem;background:rgba(253,252,248,0.95);color:var(--brass-500);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;border:1px solid var(--border);cursor:pointer;transition:transform .2s;z-index:2}
+.fav-badge:hover{transform:scale(1.1)}
+.fav-badge.active{color:var(--brass-500)}
+[data-theme="dark"] .fav-badge{background:rgba(24,34,40,0.95)}
+.property-body{padding:1.25rem;flex:1;display:flex;flex-direction:column;gap:0.75rem}
+.property-name{font-size:1.2rem;line-height:1.3;font-family:'Cormorant Garamond',serif;color:var(--anthracite-800);font-weight:600}
+.property-loc{font-size:0.8rem;color:var(--text-dim)}
+.property-price{display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;padding-top:0.75rem;border-top:1px solid var(--sand-100)}
+.price-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim)}
+.price-value{font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:var(--forest-800);font-weight:600}
+.price-total{font-size:0.75rem;color:var(--forest-700);font-weight:500;margin-top:0.15rem}
+
+.badge-tag{background:var(--forest-100);color:var(--forest-800);border-radius:4px;padding:0.1rem 0.5rem;font-size:0.7rem;font-weight:500;display:inline-block}
+[data-theme="dark"] .badge-tag{background:var(--forest-100);color:var(--forest-800)}
+
+.filter-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;padding:1rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem}
+.filter-bar input,.filter-bar select{padding:0.5rem 0.75rem;font-size:0.85rem;min-width:120px}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;min-width:900px}
+th,td{padding:0.85rem 1rem;text-align:left;border-bottom:1px solid var(--sand-100);vertical-align:top}
+th{background:var(--sand-100);font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--taupe-600);position:sticky;top:0;cursor:pointer;user-select:none}
+th:hover{background:var(--sand-200)}
+tbody tr:hover{background:var(--sand-100)}
+tbody tr:last-child td{border-bottom:none}
+.sort-arrow{color:var(--brass-500);margin-left:0.25rem;font-size:0.7rem}
+.total-cell{font-weight:600;color:var(--forest-800)}
+.nights-badge{display:inline-block;background:var(--forest-100);color:var(--forest-800);padding:0.1rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:600}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(20,22,24,0.55);display:flex;align-items:center;justify-content:center;padding:2rem;z-index:100;backdrop-filter:blur(3px)}
+.modal{background:var(--surface);border-radius:12px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal h2{margin-bottom:1.5rem}
+.form-group{margin-bottom:1.25rem}
+.form-group label{display:block;font-size:0.8rem;font-weight:500;color:var(--anthracite-600);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.06em}
+.form-group input,.form-group select,.form-group textarea{width:100%}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.form-hint{font-size:0.75rem;color:var(--text-dim);margin-top:0.35rem}
+.modal-actions{display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+
+.empty-state{text-align:center;padding:4rem 2rem;background:var(--surface);border:1px dashed var(--sand-300);border-radius:10px}
+.empty-state h3{margin-bottom:0.75rem;color:var(--taupe-600)}
+.empty-state p{color:var(--text-dim);margin-bottom:1.5rem}
+
+.search-panel{background:var(--forest-900);color:#faf7ef;border-radius:12px;padding:1.75rem 2rem;margin-bottom:2rem}
+.search-panel h3{color:#fdfcf8;font-size:1.2rem;font-family:'Cormorant Garamond',serif;margin-bottom:1.25rem;font-weight:500}
+.search-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;align-items:end}
+.search-field label{display:block;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--sand-300);margin-bottom:0.4rem;font-weight:500}
+.search-field input,.search-field select{width:100%;padding:0.6rem 0.75rem;border:1px solid var(--forest-700);background:var(--forest-800);color:#fdfcf8;border-radius:5px;font-size:0.9rem}
+.search-field input:focus,.search-field select:focus{border-color:var(--brass-400);box-shadow:0 0 0 2px rgba(203,169,79,0.25)}
+.search-field select option{background:var(--forest-800);color:#fdfcf8}
+.search-field input[readonly]{background:var(--forest-700);color:var(--sand-200);cursor:not-allowed}
+
+.context-bar{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;padding:1.25rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem}
+.context-bar .ctx-field{display:flex;flex-direction:column;gap:0.3rem;min-width:130px}
+.context-bar .ctx-field label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);font-weight:600}
+.context-bar .ctx-field input{padding:0.5rem 0.7rem;font-size:0.9rem}
+.context-bar .ctx-toggle{display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;padding:0.55rem 0.75rem;border:1px solid var(--sand-300);border-radius:6px;background:var(--surface)}
+.context-bar .ctx-toggle:hover{background:var(--sand-100)}
+.context-bar .ctx-toggle input{cursor:pointer;accent-color:var(--forest-700)}
+.context-bar .ctx-summary{margin-left:auto;font-size:0.8rem;color:var(--text-dim);text-align:right}
+.context-bar .ctx-summary strong{color:var(--forest-800)}
+
+.detail-header{background:var(--forest-900);color:#faf7ef;padding:3rem 2.5rem;border-radius:12px;margin-bottom:2rem}
+.detail-header h1{color:#fdfcf8;font-size:2.4rem;margin-bottom:0.5rem}
+.detail-header .loc{color:var(--sand-300);font-size:0.95rem}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;margin-bottom:2rem}
+.detail-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem}
+.detail-block h4{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);font-weight:600;margin-bottom:0.75rem;font-family:'Inter',sans-serif}
+.detail-block .value{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--forest-800);font-weight:600}
+.detail-block .value-sm{font-size:1rem;color:var(--text);font-weight:400;font-family:'Inter',sans-serif}
+
+/* === GALERIE === */
+.gallery{margin-bottom:1.5rem;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+.gallery-main{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,var(--sand-100),var(--sand-200));overflow:hidden}
+.gallery-main img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;background:rgba(253,252,248,0.92);color:var(--forest-900);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:'Cormorant Garamond',serif;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.15);line-height:1;padding-bottom:4px}
+.gallery-nav:hover{background:white;transform:translateY(-50%) scale(1.08)}
+.gallery-prev{left:0.75rem}
+.gallery-next{right:0.75rem}
+.gallery-counter{position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(20,22,24,0.7);color:white;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600;letter-spacing:0.05em}
+.gallery-delete{position:absolute;top:0.75rem;right:0.75rem;background:rgba(179,38,30,0.9);color:white;width:34px;height:34px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.gallery-delete:hover{background:var(--danger);transform:scale(1.08)}
+.gallery-thumbs{display:flex;gap:0.4rem;padding:0.6rem;overflow-x:auto;background:var(--sand-100);scrollbar-width:thin}
+.gallery-thumbs::-webkit-scrollbar{height:6px}
+.gallery-thumbs::-webkit-scrollbar-thumb{background:var(--sand-300);border-radius:3px}
+.gallery-thumb{flex:0 0 70px;height:52px;border-radius:6px;overflow:hidden;cursor:pointer;opacity:0.55;transition:all .2s;border:2px solid transparent}
+.gallery-thumb:hover{opacity:0.85}
+.gallery-thumb.active{opacity:1;border-color:var(--brass-400)}
+.gallery-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* === LIGHTBOX === */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:300;display:flex;align-items:center;justify-content:center;padding:2rem}
+.lightbox img{max-width:95vw;max-height:88vh;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,0.5);border-radius:4px}
+.lightbox-close{position:absolute;top:1.5rem;right:1.5rem;color:white;font-size:2.4rem;cursor:pointer;opacity:0.7;transition:opacity .2s;line-height:1;padding:0.5rem}
+.lightbox-close:hover{opacity:1}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);color:white;font-size:3.5rem;cursor:pointer;opacity:0.55;transition:opacity .2s;font-family:'Cormorant Garamond',serif;padding:1rem;line-height:1}
+.lightbox-nav:hover{opacity:1}
+.lightbox-prev{left:1.5rem}
+.lightbox-next{right:1.5rem}
+.lightbox-counter{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);color:white;font-size:0.9rem;letter-spacing:0.15em;font-weight:500}
+
+/* === UPLOAD === */
+.image-upload{margin-top:0.5rem}
+.drop-zone{border:2px dashed var(--sand-300);border-radius:10px;padding:1.75rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface)}
+.drop-zone:hover{border-color:var(--forest-500);background:var(--sand-100)}
+.drop-zone.dragover{border-color:var(--forest-600);background:var(--forest-100);color:var(--forest-800)}
+.drop-zone svg{color:var(--taupe-500);margin-bottom:0.25rem}
+.upload-hint{font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem}
+
+.toast{position:fixed;bottom:2rem;right:2rem;z-index:400;background:var(--forest-900);color:#fdfcf8;padding:0.9rem 1.4rem;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.25);font-size:0.9rem;opacity:0;transform:translateY(20px);transition:all .3s;pointer-events:none;max-width:360px}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.compare-selector{display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.compare-chip{display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 0.75rem;background:var(--sand-100);border-radius:20px;font-size:0.8rem;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.compare-chip:hover{background:var(--sand-200)}
+.compare-chip.selected{background:var(--forest-700);color:#fdfcf8;border-color:var(--forest-800)}
+
+.score-pill{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.1rem;color:white;background:var(--forest-700)}
+.score-pill.high{background:var(--success)}
+.score-pill.mid{background:var(--brass-500)}
+.score-pill.low{background:var(--taupe-500)}
+
+.collection-chip{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;background:var(--sand-100);border-radius:16px;font-size:0.75rem;cursor:pointer;border:1px solid transparent}
+.collection-chip.active{background:var(--forest-700);color:#fdfcf8}
+.collection-chip .del{opacity:0.6;font-size:0.9rem}
+.collection-chip .del:hover{opacity:1;color:var(--danger)}
+
+canvas.chart{width:100%;height:200px;display:block}
+#map{height:420px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+
+.tabs{display:flex;gap:0.25rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto}
+.tab{padding:0.75rem 1.25rem;font-size:0.9rem;color:var(--text-dim);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-weight:500}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--forest-700);border-bottom-color:var(--forest-700)}
+
+.import-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.9rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.5rem;font-size:0.85rem;background:var(--surface)}
+.import-row .status{flex-shrink:0;width:70px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em}
+.import-row .status.pending{color:var(--info)}
+.import-row .status.duplicate{color:var(--warning)}
+.import-row .status.success{color:var(--success)}
+.import-row .status.failed{color:var(--danger)}
+.import-row .url{flex:1;font-size:0.8rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:900px){
+  .sidebar{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;padding:0.5rem;flex-direction:row;justify-content:space-around;border-top:1px solid var(--forest-800);overflow:visible}
+  .logo,.logo-sub,.nav-divider,.sidebar-footer{display:none}
+  .nav{flex-direction:row;gap:0;flex:1;justify-content:space-around;overflow-x:auto}
+  .nav-item{flex-direction:column;gap:0.15rem;padding:0.5rem 0.4rem;font-size:0.62rem;text-align:center;min-width:60px}
+  .nav-icon{width:20px;height:20px}
+  .main{margin-left:0;padding:1.5rem 1rem 7rem}
+  .page-header{flex-direction:column;align-items:flex-start}
+  h1{font-size:1.9rem}
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  .modal{padding:1.5rem}
+  .toast{left:1rem;right:1rem;bottom:6rem}
+  .context-bar{flex-direction:column;align-items:stretch}
+  .context-bar .ctx-summary{margin-left:0;text-align:left}
+  .lightbox-nav{font-size:2.5rem}
+  .gallery-nav{width:38px;height:38px;font-size:1.3rem}
+}
+@media print{
+  .sidebar,.filter-bar,.compare-selector,.page-header button,.btn,.modal-overlay,.toast,.tabs,#map,.gallery-nav,.gallery-delete,.gallery-thumbs,.lightbox,.image-upload,.no-print{display:none !important}
+  .main{margin:0;padding:1rem;max-width:100%}
+  .card,.stat-card,.detail-block{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+  body{background:white;color:black}
+  .page-header{border-bottom:2px solid #333}
+  table{min-width:0;font-size:0.75rem}
+  th,td{padding:0.4rem 0.5rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div>
+      <div class="logo">StaySelect</div>
+      <div class="logo-sub">My Hotel Collection</div>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="properties">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v16"/></svg>
+        <span>Unterkünfte</span>
+      </button>
+      <button class="nav-item" data-view="add">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Hinzufügen</span>
+      </button>
+      <button class="nav-item" data-view="compare">
+        <svg class="nav-icon" viewBox="0 0 24 24"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg>
+        <span>Vergleich</span>
+      </button>
+      <button class="nav-item" data-view="search">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Suche</span>
+      </button>
+      <button class="nav-item" data-view="map">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        <span>Karte</span>
+      </button>
+      <button class="nav-item" data-view="history">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 12l4-4 4 4 4-4"/></svg>
+        <span>Preisverlauf</span>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" data-view="collections">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        <span>Sammlungen</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Einstellungen</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="toggleTheme()" id="themeBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <span id="themeLabel">Dark Mode</span>
+      </button>
+      <div id="lastUpdated" style="margin-top:0.5rem"></div>
+    </div>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ============================================================
+   StaySelect – v5 mit Bildergalerie (IndexedDB)
+   ============================================================ */
+
+const STORAGE_KEY = 'stayselect_v5';
+const SETTINGS_KEY = 'stayselect_settings_v5';
+
+const COORDS = {
+  'p-wallberg':[47.6637,11.7753],'p-weissach':[47.6906,11.7667],'p-bussi':[47.7167,11.7167],
+  'p-clubhaus':[47.7103,11.7583],'p-linde':[47.1400,10.5700],'p-cabinski':[47.0167,9.9500],
+  'p-alpechalets':[47.0333,9.9833],'p-reichhalter':[46.6167,11.1500],'p-arctic':[66.0000,20.0000],
+  'p-bissee':[54.1667,10.1000],'p-villa-saima':[61.3000,28.1000]
+};
+
+const SEED_PROPERTIES = [
+  { id:'p-wallberg', name:'Wallberg-Haus Bergrestaurant', property_type:'gasthof', country:'Deutschland', region:'Bayern', city:'Rottach-Egern', address:'Wallberg 1, 83700 Rottach-Egern',
+    url:'https://wallberg-haus.de/bergrestaurant/', provider:'official', description:'Bergrestaurant auf 1.512 m am Hausberg des Tegernsees. Bayerische Küche mit Käsespätzle, Kaiserschmarrn und Bergfrühstück.',
+    meal_plan:'half_board', dinner_score:4, dinner_notes:'Bayerische Küche, Käsespätzle mit Tegernseer Bergkäse', spa:false, spa_area_sqm:null, sauna_types:[], amenities:['Sonnenterrasse','Rodelbahn','Eventraum'],
+    price_note:'Übernachtungspreise auf Anfrage', base_price:null, personal_rating:null, booking_checkin:null, booking_checkout:null, notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-weissach', name:'Gasthof zur Weissach', property_type:'gasthof', country:'Deutschland', region:'Bayern', city:'Rottach-Egern', address:'Überfahrtstraße 2, 83700 Rottach-Egern',
+    url:'https://bachmair-weissach.com/gasthof-zur-weissach/', provider:'official', description:'Traditionsreiches Restaurant von 1862 mit gehobener bayerischer Küche. Historische Stuben, Sommelier, heimischer Fisch.',
+    meal_plan:'half_board', dinner_score:5, dinner_notes:'Gehobene bayerische Küche, 4-Gänge-Menü 89,50 €, Sommelier', spa:false, spa_area_sqm:null, sauna_types:[], amenities:['Historische Stuben','Sonnenterrasse','Weinkarte'],
+    price_note:'4-Gänge-Menü 89,50 €/Person', base_price:null, personal_rating:null, booking_checkin:null, booking_checkout:null, notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-bussi', name:'Hotel Bussi Baby (Adults only)', property_type:'boutique_hotel', country:'Deutschland', region:'Bayern', city:'Bad Wiessee', address:'Sanktjohanserstrasse 46, 83707 Bad Wiessee',
+    url:'https://www.simplebooking.it/ibe2/hotel/6641/offer/225678', provider:'simplebooking', description:'Stylisches Adults-only-Hotel am Tegernsee mit Bergblick, Balkon und modernem Design. Lazy-Sunday-Angebot mit 15 % Rabatt.',
+    meal_plan:'breakfast', dinner_score:null, dinner_notes:'Keine Angabe zum Dinner', spa:true, spa_area_sqm:null, sauna_types:[], amenities:['Balkon','Bergblick','Free Wi-Fi','Adults only'],
+    price_note:'Standard-DZ ab 152,15 €/Nacht (Nov 2026)', base_price:179, personal_rating:null, booking_checkin:'2026-11-08', booking_checkout:'2026-11-09', notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[{price:179,date:'2026-10-10'}] },
+  { id:'p-clubhaus', name:'Clubhaus Tegernsee Apartments', property_type:'apartment', country:'Deutschland', region:'Bayern', city:'Tegernsee', address:'Tegernsee',
+    url:'https://clubhaus-tegernsee.com/preise-und-konditionen/', provider:'official', description:'Apartments und Penthouse-Wohnung am Tegernsee. Inklusive TegernseeCard (50 % Rabatt auf Wallbergbahn und Schifffahrt).',
+    meal_plan:'room_only', dinner_score:null, dinner_notes:'Mediterrane Levante-Küche im Haus', spa:false, spa_area_sqm:null, sauna_types:[], amenities:['TegernseeCard','Fitnessstudio','Mediterrane Küche'],
+    price_note:'Apartments ab 280 €/Nacht, Penthouse ab 590 €/Nacht, min. 2 Nächte', base_price:280, personal_rating:null, booking_checkin:'2026-12-20', booking_checkout:'2026-12-23', notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[{price:280,date:'2026-10-10'}] },
+  { id:'p-linde', name:'Landgasthof Linde', property_type:'gasthof', country:'Österreich', region:'Tirol', city:'Landeck', address:'Österreich',
+    url:'https://www.landgasthof-linde.at/linden-spa/', provider:'official', description:'Landgasthof mit neuem Linden-SPA: beheizter Außenpool, Bio-Sauna, Finnische Sauna, Dampfbad, Infrarotsauna, Whirlpool.',
+    meal_plan:'half_board', dinner_score:4, dinner_notes:'Regionale Küche', spa:true, spa_area_sqm:null, sauna_types:['Finnische Sauna','Bio-Sauna','Dampfbad','Infrarotsauna'], amenities:['Außenpool','Whirlpool','Massage','Ruheraum'],
+    price_note:'Auf Anfrage', base_price:null, personal_rating:null, booking_checkin:null, booking_checkout:null, notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-cabinski', name:'Cabinski Montafon', property_type:'chalet', country:'Österreich', region:'Vorarlberg', city:'Montafon', address:'Montafon, Vorarlberg',
+    url:'https://onepagebooking.com/cabinski-montafon', provider:'onepagebooking', description:'Ski-Chalets im Montafon mit Skipass-Angeboten.',
+    meal_plan:'room_only', dinner_score:null, dinner_notes:null, spa:false, spa_area_sqm:null, sauna_types:[], amenities:['Skipass-Option'],
+    price_note:'4 Nächte + 2×3-Tages-Skipass ab 832 €', base_price:208, personal_rating:null, booking_checkin:'2027-01-10', booking_checkout:'2027-01-14', notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[{price:208,date:'2026-10-10'}] },
+  { id:'p-alpechalets', name:'Alpe Chalets', property_type:'chalet', country:'Österreich', region:'Vorarlberg', city:'Montafon', address:'Österreich',
+    url:'https://alpechalets.at/', provider:'official', description:'Luxus-Chalets in den Alpen.',
+    meal_plan:'unknown', dinner_score:null, dinner_notes:null, spa:true, spa_area_sqm:null, sauna_types:['Private Sauna'], amenities:['Private Spa'],
+    price_note:'Auf Anfrage', base_price:null, personal_rating:null, booking_checkin:null, booking_checkout:null, notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-reichhalter', name:'1477 Reichhalter – Eat & Sleep', property_type:'boutique_hotel', country:'Italien', region:'Südtirol', city:'Lana', address:'Lana, Südtirol',
+    url:'https://www.1477reichhalter.com/de', provider:'official', description:'Familiengeführtes Boutiquehotel in einem über 500 Jahre alten Haus. Ausgezeichnet mit drei Gault & Millau Hauben.',
+    meal_plan:'breakfast', dinner_score:5, dinner_notes:'Drei Gault & Millau Hauben, 4-Gänge-Überraschungsmenü im Restaurant Miil.', spa:true, spa_area_sqm:null, sauna_types:[], amenities:['Historisches Gebäude','Gault&Millau','Yoga','Fahrradverleih'],
+    price_note:'Culinary Highlights: 4 Nächte ab 569 €/Person', base_price:142, personal_rating:null, booking_checkin:'2027-02-01', booking_checkout:'2027-02-05', notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[{price:142,date:'2026-10-10'}] },
+  { id:'p-arctic', name:'Arctic Bath', property_type:'wellness_resort', country:'Schweden', region:'Norrbotten', city:'Lule River', address:'Lule River, Schwedisch-Lappland',
+    url:'https://arcticbath.se/', provider:'official', description:'Schwimmendes Hotel & SPA auf dem Lule-Fluss. Aurora Borealis, Michelin-Key, Cold Baths.',
+    meal_plan:'half_board', dinner_score:5, dinner_notes:'Chef David, nur lokale Zutaten', spa:true, spa_area_sqm:null, sauna_types:['Finnische Sauna','Dampfbad'], amenities:['Floating Spa','Aurora Borealis','Michelin Key','Cold Bath','Floating Restaurant'],
+    price_note:'Auf Anfrage, Tour 125 SEK/Person', base_price:null, personal_rating:null, booking_checkin:'2027-03-01', booking_checkout:'2027-03-04', notes:'', is_favorite:true, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-bissee', name:'Hof Bissee – Natur-Hideaway', property_type:'boutique_hotel', country:'Deutschland', region:'Schleswig-Holstein', city:'Bissee', address:'Eiderstraße 13, 24582 Bissee',
+    url:'https://hofbissee.de/', provider:'official', description:'Natur-Hideaway mit 17 Zimmern & Cabins im Boho-Country-Stil. Farmhouse & Corn Barn Spa, Privat-Kino, BBQ, Naturpool.',
+    meal_plan:'breakfast', dinner_score:null, dinner_notes:'Restaurant vorhanden', spa:true, spa_area_sqm:null, sauna_types:['Dampfsauna'], amenities:['Naturpool','Privat-Kino','Holzofen','Hunde willkommen','Massage','Fahrräder'],
+    price_note:'Auf Anfrage', base_price:null, personal_rating:null, booking_checkin:null, booking_checkout:null, notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[] },
+  { id:'p-villa-saima', name:'Villa Saimaansaari', property_type:'ferienhaus', country:'Finnland', region:'Saimaa', city:'Saimaa-See', address:'Saimaa-See, Finnland',
+    url:'https://cottagefinland.fi/cottages/2793/villa-saimaansaari', provider:'official', description:'2022 fertiggestellte Blockhausvilla mit 3 Schlafzimmern für 6 Personen. Ruderboot und 2 SUP-Boards inklusive.',
+    meal_plan:'room_only', dinner_score:null, dinner_notes:null, spa:true, spa_area_sqm:null, sauna_types:['Finnische Sauna'], amenities:['Ruderboot','SUP-Boards','See-Zugang','Sauna'],
+    price_note:'Ab 242 €/Nacht, Endreinigung 150 €, Whirlpool 150 €', base_price:242, personal_rating:null, booking_checkin:'2027-06-15', booking_checkout:'2027-06-22', notes:'', is_favorite:false, collections:[], created_at:'2026-10-10', price_history:[{price:242,date:'2026-10-10'}] }
+];
+
+const DEFAULT_SETTINGS = {
+  stalenessHours:24,
+  weights:{price_value:30,dinner_quality:25,spa_wellness:25,property_quality:10,personal_rating:10},
+  currency:'EUR', theme:'light'
+};
+
+const state = {
+  properties:[], settings:{...DEFAULT_SETTINGS}, currentView:'dashboard', currentId:null,
+  compareSelection:[],
+  compareContext:{checkIn:'',checkOut:'',usePropertyValues:false,adults:2},
+  filters:{search:'',country:'',type:'',mealPlan:'',maxPrice:'',spaOnly:false,favoriteOnly:false,collection:''},
+  sort:{column:'name',direction:'asc'},
+  searchContext:null, lastSearch:null, collections:[], mapInstance:null, historyProperty:null,
+  galleryIndex:{}, lightbox:null, uploadingFor:null
+};
+
+/* ============================================================
+   IMAGE STORAGE (IndexedDB)
+   ============================================================ */
+const imgDB = (() => {
+  const DB_NAME='stayselect_images', STORE='images';
+  let dbPromise=null;
+  function open(){
+    if(dbPromise) return dbPromise;
+    dbPromise=new Promise((res,rej)=>{
+      const r=indexedDB.open(DB_NAME,1);
+      r.onupgradeneeded=e=>{
+        const db=e.target.result;
+        if(!db.objectStoreNames.contains(STORE)){
+          const s=db.createObjectStore(STORE,{keyPath:'id'});
+          s.createIndex('property_id','property_id',{unique:false});
+        }
+      };
+      r.onsuccess=()=>res(r.result);
+      r.onerror=()=>rej(r.error);
+    });
+    return dbPromise;
+  }
+  async function add(rec){
+    const db=await open();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(STORE,'readwrite');
+      tx.objectStore(STORE).put(rec);
+      tx.oncomplete=()=>res(rec);
+      tx.onerror=()=>rej(tx.error);
+    });
+  }
+  async function getByProperty(pid){
+    const db=await open();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(STORE,'readonly');
+      const idx=tx.objectStore(STORE).index('property_id');
+      const r=idx.getAll(pid);
+      r.onsuccess=()=>{
+        const arr=r.result||[];
+        arr.sort((a,b)=>(a.order||0)-(b.order||0));
+        res(arr);
+      };
+      r.onerror=()=>rej(r.error);
+    });
+  }
+  async function del(id){
+    const db=await open();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(STORE,'readwrite');
+      tx.objectStore(STORE).delete(id);
+      tx.oncomplete=()=>res();
+      tx.onerror=()=>rej(tx.error);
+    });
+  }
+  async function delByProperty(pid){
+    const arr=await getByProperty(pid);
+    for(const a of arr) await del(a.id);
+  }
+  return {add,getByProperty,del,delByProperty};
+})();
+
+const imageCache = new Map();
+
+async function loadImages(propertyId){
+  if(imageCache.has(propertyId)) return imageCache.get(propertyId);
+  const p = state.properties.find(x=>x.id===propertyId);
+  const external = (p?.image_urls||[]).map(url=>({id:'ext:'+url,url,name:url,isExternal:true}));
+  const records = await imgDB.getByProperty(propertyId);
+  const internal = records.map(r=>({id:r.id,name:r.name,isExternal:false,url:URL.createObjectURL(r.blob),blob:r.blob}));
+  const all = [...internal,...external];
+  imageCache.set(propertyId,all);
+  return all;
+}
+function clearImageCache(pid){
+  if(!imageCache.has(pid)) return;
+  const arr=imageCache.get(pid);
+  arr.forEach(u=>{ if(!u.isExternal && u.url.startsWith('blob:')) URL.revokeObjectURL(u.url); });
+  imageCache.delete(pid);
+}
+function clearAllImageCache(){
+  for(const pid of imageCache.keys()) clearImageCache(pid);
+}
+
+async function compressImage(file,maxDim=1600,quality=0.82){
+  if(!file.type.startsWith('image/')) throw new Error('Kein Bild');
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        let {width,height}=img;
+        if(width>maxDim||height>maxDim){
+          const ratio=Math.min(maxDim/width,maxDim/height);
+          width=Math.round(width*ratio);height=Math.round(height*ratio);
+        }
+        const canvas=document.createElement('canvas');
+        canvas.width=width;canvas.height=height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        canvas.toBlob(b=>b?res(b):rej(new Error('Kompression fehlgeschlagen')),'image/jpeg',quality);
+      }catch(e){rej(e);}
+    };
+    img.onerror=()=>rej(new Error('Bild konnte nicht geladen werden'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+async function handleFiles(files,propertyId){
+  const valid = files.filter(f=>f.type.startsWith('image/'));
+  if(!valid.length){ toast('Keine Bilddateien ausgewählt'); return; }
+  toast(`${valid.length} Bild${valid.length>1?'er':''} wird verarbeitet…`);
+  const existing = await imgDB.getByProperty(propertyId);
+  let order = existing.length;
+  let ok=0, fail=0;
+  for(const file of valid){
+    try{
+      if(file.size>25*1024*1024){ fail++; continue; }
+      const blob = await compressImage(file);
+      await imgDB.add({
+        id:'img-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+        property_id:propertyId, order:order++, blob,
+        name:file.name, type:'image/jpeg', size:blob.size,
+        created_at:new Date().toISOString()
+      });
+      ok++;
+    }catch(e){ console.error(e); fail++; }
+  }
+  clearImageCache(propertyId);
+  await loadImages(propertyId);
+  render();
+  if(ok) toast(`${ok} Bild${ok>1?'er':''} hinzugefügt${fail?`, ${fail} fehlgeschlagen`:''}`);
+  else toast('Keine Bilder hinzugefügt');
+}
+
+async function handleDrop(event,propertyId){
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  const files = Array.from(event.dataTransfer.files||[]);
+  await handleFiles(files,propertyId);
+}
+async function handleFileSelect(event,propertyId){
+  const files = Array.from(event.target.files||[]);
+  await handleFiles(files,propertyId);
+  event.target.value='';
+}
+function addImageFromUrl(propertyId){
+  const input = document.getElementById('imageUrlInput-'+propertyId);
+  if(!input) return;
+  const url = input.value.trim();
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)){ toast('Ungültige URL'); return; }
+  const p = state.properties.find(x=>x.id===propertyId);
+  if(!p) return;
+  if(!p.image_urls) p.image_urls=[];
+  p.image_urls.push(url);
+  save();
+  clearImageCache(propertyId);
+  loadImages(propertyId).then(()=>render());
+  toast('Bild-URL hinzugefügt');
+}
+async function deleteImage(propertyId,imageId,isExternal){
+  if(!confirm('Bild wirklich löschen?')) return;
+  if(isExternal){
+    const p = state.properties.find(x=>x.id===propertyId);
+    if(p && p.image_urls){
+      const url = imageId.replace(/^ext:/,'');
+      p.image_urls = p.image_urls.filter(u=>u!==url);
+      save();
+    }
+  } else {
+    await imgDB.del(imageId);
+  }
+  clearImageCache(propertyId);
+  await loadImages(propertyId);
+  state.galleryIndex[propertyId]=0;
+  render();
+  toast('Bild gelöscht');
+}
+
+/* ============================================================
+   Galerie / Lightbox
+   ============================================================ */
+function galleryNav(propertyId, delta){
+  const images = imageCache.get(propertyId)||[];
+  if(!images.length) return;
+  const cur = state.galleryIndex[propertyId]||0;
+  const next = (cur+delta+images.length)%images.length;
+  state.galleryIndex[propertyId]=next;
+  updateGalleryDOM(propertyId);
+}
+function galleryGoto(propertyId,index){
+  state.galleryIndex[propertyId]=index;
+  updateGalleryDOM(propertyId);
+}
+function updateGalleryDOM(propertyId){
+  const el = document.querySelector(`.gallery[data-pid="${propertyId}"]`);
+  if(!el) return;
+  const images = imageCache.get(propertyId)||[];
+  const cur = state.galleryIndex[propertyId]||0;
+  const img = images[cur];
+  if(!img) return;
+  const mainImg = el.querySelector('.gallery-main img');
+  if(mainImg) mainImg.src = img.url;
+  const counter = el.querySelector('.gallery-counter');
+  if(counter) counter.textContent = `${cur+1} / ${images.length}`;
+  el.querySelectorAll('.gallery-thumb').forEach((t,i)=>t.classList.toggle('active',i===cur));
+}
+function openLightbox(propertyId,index){
+  const images = imageCache.get(propertyId)||[];
+  if(!images.length) return;
+  state.lightbox = {propertyId,index};
+  const lb = document.createElement('div');
+  lb.className='lightbox';
+  lb.id='lightbox';
+  lb.innerHTML = `
+    <button class="lightbox-close" onclick="closeLightbox()">×</button>
+    ${images.length>1?`<button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">‹</button>`:''}
+    <img src="${images[index].url}" alt="" />
+    ${images.length>1?`<button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">›</button>`:''}
+    <div class="lightbox-counter">${index+1} / ${images.length}</div>
+  `;
+  lb.onclick = e=>{ if(e.target===lb) closeLightbox(); };
+  document.body.appendChild(lb);
+}
+function closeLightbox(){
+  const lb=document.getElementById('lightbox');
+  if(lb) lb.remove();
+  state.lightbox=null;
+}
+function lightboxNav(delta){
+  if(!state.lightbox) return;
+  const images = imageCache.get(state.lightbox.propertyId)||[];
+  if(!images.length) return;
+  const n = (state.lightbox.index+delta+images.length)%images.length;
+  state.lightbox.index = n;
+  const img = document.querySelector('#lightbox img');
+  if(img) img.src = images[n].url;
+  const c = document.querySelector('#lightbox .lightbox-counter');
+  if(c) c.textContent = `${n+1} / ${images.length}`;
+}
+document.addEventListener('keydown', e=>{
+  if(state.lightbox){
+    if(e.key==='Escape') closeLightbox();
+    else if(e.key==='ArrowLeft') lightboxNav(-1);
+    else if(e.key==='ArrowRight') lightboxNav(1);
+    return;
+  }
+  if(state.currentView==='detail' && document.querySelector('.gallery')){
+    if(e.key==='ArrowLeft') galleryNav(state.currentId,-1);
+    else if(e.key==='ArrowRight') galleryNav(state.currentId,1);
+  }
+});
+
+/* ============================================================
+   Galerie-Renderer
+   ============================================================ */
+function renderGallery(propertyId){
+  const images = imageCache.get(propertyId)||[];
+  if(!images.length){
+    return `<div class="gallery"><div class="gallery-main"><div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--taupe-500);font-size:0.9rem">Noch keine Bilder – unten hochladen</div></div></div>`;
+  }
+  const cur = state.galleryIndex[propertyId]||0;
+  const img = images[cur];
+  return `
+    <div class="gallery" data-pid="${propertyId}">
+      <div class="gallery-main">
+        <img src="${img.url}" alt="" onclick="openLightbox('${propertyId}',${cur})" />
+        ${images.length>1?`
+          <button class="gallery-nav gallery-prev" onclick="event.stopPropagation();galleryNav('${propertyId}',-1)" aria-label="Zurück">‹</button>
+          <button class="gallery-nav gallery-next" onclick="event.stopPropagation();galleryNav('${propertyId}',1)" aria-label="Weiter">›</button>
+        `:''}
+        <div class="gallery-counter">${cur+1} / ${images.length}</div>
+        <button class="gallery-delete" onclick="event.stopPropagation();deleteImage('${propertyId}','${img.id}',${img.isExternal})" title="Bild löschen">×</button>
+      </div>
+      ${images.length>1?`
+        <div class="gallery-thumbs">
+          ${images.map((im,i)=>`
+            <div class="gallery-thumb ${i===cur?'active':''}" onclick="galleryGoto('${propertyId}',${i})">
+              <img src="${im.url}" alt="" />
+            </div>
+          `).join('')}
+        </div>
+      `:''}
+    </div>
+  `;
+}
+
+function renderImageUpload(propertyId){
+  return `
+    <div class="detail-block image-upload" style="margin-bottom:1.5rem">
+      <h4>Bilder verwalten</h4>
+      <div class="drop-zone"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event,'${propertyId}')"
+           onclick="this.querySelector('input').click()">
+        <input type="file" multiple accept="image/*" onchange="handleFileSelect(event,'${propertyId}')" style="display:none" />
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div style="margin-top:0.5rem;font-size:0.95rem">Bilder hierher ziehen oder klicken</div>
+        <div class="upload-hint">JPG, PNG, WebP · automatische Kompression auf max. 1600 px</div>
+      </div>
+      <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+        <input type="url" id="imageUrlInput-${propertyId}" placeholder="Bild-URL einfügen…" style="flex:1;min-width:200px;font-size:0.9rem;padding:0.5rem 0.7rem" />
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();addImageFromUrl('${propertyId}')">URL hinzufügen</button>
+      </div>
+      <div class="upload-hint" style="margin-top:0.5rem">
+        Bilder werden lokal im Browser gespeichert (IndexedDB) und sind nicht im JSON-Export enthalten.
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+function uid(){ return 'p-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtPrice(v,c){
+  if(v==null||isNaN(v)) return '—';
+  try{ return new Intl.NumberFormat('de-DE',{style:'currency',currency:c||'EUR',maximumFractionDigits:0}).format(v); }
+  catch{ return v+' '+(c||'EUR'); }
+}
+function fmtDate(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('de-DE',{year:'numeric',month:'short',day:'numeric'}); }catch{ return d; } }
+function fmtDateShort(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch{ return d; } }
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+function typeLabel(t){
+  const m={hotel:'Hotel',boutique_hotel:'Boutique-Hotel',chalet:'Chalet',ferienhaus:'Ferienhaus',wellness_resort:'Wellness-Resort',apartment:'Apartment',pension:'Pension',gasthof:'Gasthof',other:'Unterkunft'};
+  return m[t]||'Unterkunft';
+}
+function mealLabel(m){
+  const map={room_only:'Ohne Verpflegung',breakfast:'Frühstück',half_board:'Halbpension',full_board:'Vollpension',all_inclusive:'All Inclusive',unknown:'Unbekannt'};
+  return map[m]||'Unbekannt';
+}
+function initials(name){ return (name||'').split(/\s+/).filter(Boolean).slice(0,3).map(w=>w[0]).join('').toUpperCase(); }
+function providerLabel(p){
+  const m={official:'Offizielle Website',booking:'Booking.com',airbnb:'Airbnb',escapio:'Escapio',simplebooking:'SimpleBooking',onepagebooking:'OnePageBooking',huettenland:'Hüttenland',manual:'Manuell'};
+  return m[p]||p||'Unbekannt';
+}
+function nightsBetween(ci,co){
+  if(!ci||!co) return null;
+  try{ const n=Math.round((new Date(co)-new Date(ci))/86400000); return n>0?n:null; }catch{ return null; }
+}
+function effectiveBooking(p){
+  const ctx=state.compareContext, useOwn=ctx.usePropertyValues;
+  const checkin=(useOwn&&p.booking_checkin)?p.booking_checkin:(ctx.checkIn||p.booking_checkin||null);
+  const checkout=(useOwn&&p.booking_checkout)?p.booking_checkout:(ctx.checkOut||p.booking_checkout||null);
+  const nights=nightsBetween(checkin,checkout);
+  let source='leer';
+  if(useOwn&&p.booking_checkin&&p.booking_checkout) source='eigen';
+  else if(ctx.checkIn&&ctx.checkOut) source='kontext';
+  return {checkin,checkout,nights,source};
+}
+function totalForProperty(p){
+  const b=effectiveBooking(p);
+  if(p.base_price==null||b.nights==null) return null;
+  return Math.round(p.base_price*b.nights*100)/100;
+}
+
+/* ============================================================
+   Persistence + Migration
+   ============================================================ */
+function migrateProperty(p){
+  if(!p.price_history) p.price_history=[];
+  if(!p.collections) p.collections=[];
+  if(!p.image_urls) p.image_urls=[];
+  if(p.is_favorite==null) p.is_favorite=false;
+  if(p.sauna_types==null) p.sauna_types=[];
+  if(p.amenities==null) p.amenities=[];
+  if(p.spa==null) p.spa=false;
+  if(p.booking_checkin===undefined){
+    if(p.booking_date){
+      p.booking_checkin=p.booking_date;
+      if(p.nights){
+        const d=new Date(p.booking_date); d.setDate(d.getDate()+Number(p.nights));
+        p.booking_checkout=d.toISOString().slice(0,10);
+      } else p.booking_checkout=null;
+    } else { p.booking_checkin=null; p.booking_checkout=null; }
+  }
+  if(p.booking_checkout===undefined) p.booking_checkout=null;
+  delete p.booking_date; delete p.nights;
+  return p;
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d=JSON.parse(raw);
+      if(Array.isArray(d.properties)) state.properties=d.properties.map(migrateProperty);
+      if(Array.isArray(d.collections)) state.collections=d.collections;
+      if(d.lastSearch) state.lastSearch=d.lastSearch;
+      if(d.compareContext){ state.compareContext={...state.compareContext,...d.compareContext}; if(state.compareContext.nights) delete state.compareContext.nights; }
+    } else {
+      state.properties=JSON.parse(JSON.stringify(SEED_PROPERTIES)).map(migrateProperty);
+      save();
+    }
+  }catch(e){ console.warn(e); state.properties=JSON.parse(JSON.stringify(SEED_PROPERTIES)).map(migrateProperty); }
+  try{
+    const raw=localStorage.getItem(SETTINGS_KEY);
+    if(raw) state.settings={...DEFAULT_SETTINGS,...JSON.parse(raw)};
+  }catch(e){}
+  applyTheme();
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify({
+    properties:state.properties, collections:state.collections,
+    lastSearch:state.lastSearch, compareContext:state.compareContext
+  })); }catch(e){ toast('Speichern fehlgeschlagen: '+e.message); }
+}
+function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY,JSON.stringify(state.settings)); }catch(e){} }
+
+/* ============================================================
+   Theme
+   ============================================================ */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',state.settings.theme||'light');
+  const lbl=document.getElementById('themeLabel');
+  if(lbl) lbl.textContent=(state.settings.theme==='dark')?'Light Mode':'Dark Mode';
+}
+function toggleTheme(){
+  state.settings.theme=(state.settings.theme==='dark')?'light':'dark';
+  saveSettings(); applyTheme();
+}
+
+/* ============================================================
+   Scoring
+   ============================================================ */
+function computeScore(p){
+  const w=state.settings.weights;
+  const prices=state.properties.map(x=>x.base_price).filter(v=>v!=null);
+  let priceScore=null;
+  if(p.base_price!=null&&prices.length>1){
+    const min=Math.min(...prices),max=Math.max(...prices);
+    priceScore=max>min?100-((p.base_price-min)/(max-min))*100:100;
+  }
+  const dinnerScore=p.dinner_score!=null?((p.dinner_score-1)/4)*100:null;
+  const saunaCount=(p.sauna_types||[]).length;
+  const spaScore=p.spa?Math.min(100,40+saunaCount*12):0;
+  const qualityScore=p.personal_rating!=null?(p.personal_rating/5)*100:60;
+  const personalScore=(p.is_favorite?50:0)+(p.personal_rating!=null?(p.personal_rating/5)*50:0);
+  const parts=[];
+  if(priceScore!=null) parts.push([priceScore,w.price_value]);
+  if(dinnerScore!=null) parts.push([dinnerScore,w.dinner_quality]);
+  parts.push([spaScore,w.spa_wellness]);
+  parts.push([qualityScore,w.property_quality]);
+  parts.push([personalScore,w.personal_rating]);
+  const sumW=parts.reduce((a,[_,ww])=>a+ww,0);
+  if(sumW===0) return null;
+  return Math.round(parts.reduce((a,[v,ww])=>a+v*ww,0)/sumW);
+}
+function scoreClass(s){ if(s==null) return ''; if(s>=75) return 'high'; if(s>=50) return 'mid'; return 'low'; }
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+function setView(view){
+  state.currentView=view;
+  document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+let renderScheduled=false;
+function render(){
+  const main=document.getElementById('main');
+  if(state.currentView!=='map' && state.mapInstance){
+    try{ state.mapInstance.remove(); }catch(e){}
+    state.mapInstance=null;
+  }
+  switch(state.currentView){
+    case 'dashboard': main.innerHTML=renderDashboard(); break;
+    case 'properties': main.innerHTML=renderProperties(); break;
+    case 'add': main.innerHTML=renderAddView(); break;
+    case 'compare': main.innerHTML=renderCompare(); break;
+    case 'detail': main.innerHTML=renderDetail(); break;
+    case 'search': main.innerHTML=renderSearchView(); break;
+    case 'map': main.innerHTML=renderMapView(); requestAnimationFrame(initMap); break;
+    case 'history': main.innerHTML=renderHistoryView(); break;
+    case 'collections': main.innerHTML=renderCollectionsView(); break;
+    case 'settings': main.innerHTML=renderSettings(); break;
+    default: main.innerHTML=renderDashboard();
+  }
+  document.getElementById('lastUpdated').textContent=new Date().toLocaleString('de-DE');
+  attachHandlers();
+  // Chart nach dem DOM-Insert zeichnen
+  setTimeout(()=>{
+    const p = state.properties.find(x=>x.id===state.currentId);
+    if(state.currentView==='detail' && p){
+      const c=document.getElementById('detailChart');
+      if(c) drawChart(c,p.price_history||[]);
+    }
+    if(state.currentView==='history'){
+      const hp = state.properties.find(x=>x.id===state.historyProperty) || state.properties.filter(p=>(p.price_history||[]).length>0)[0];
+      const c=document.getElementById('detailChart');
+      if(c && hp) drawChart(c,hp.price_history||[]);
+    }
+  },30);
+  // Async Bild-Nachladen
+  if(!renderScheduled){
+    renderScheduled=true;
+    setTimeout(async ()=>{
+      renderScheduled=false;
+      const missing=state.properties.filter(p=>!imageCache.has(p.id));
+      if(missing.length===0) return;
+      await Promise.all(missing.map(p=>loadImages(p.id)));
+      render();
+    },20);
+  }
+}
+function attachHandlers(){
+  document.querySelectorAll('.nav-item').forEach(btn=>{ btn.onclick=()=>setView(btn.dataset.view); });
+}
+
+/* ============================================================
+   Dashboard
+   ============================================================ */
+function renderDashboard(){
+  const props=state.properties;
+  if(!props.length){
+    return `<div class="page-header"><div class="page-title"><small>Dashboard</small><h1>Willkommen bei StaySelect</h1></div></div>
+      <div class="empty-state"><h3>Noch keine Unterkünfte vorhanden</h3><p>Füge deine erste Unterkunft hinzu.</p>
+      <button class="btn btn-primary" onclick="setView('add')">Erste Unterkunft hinzufügen</button></div>`;
+  }
+  const favCount=props.filter(p=>p.is_favorite).length;
+  const withSpa=props.filter(p=>p.spa).length;
+  const withDinner=props.filter(p=>p.dinner_score!=null).length;
+  const withImages=props.filter(p=>(imageCache.get(p.id)||[]).length>0).length;
+  const cheapest=[...props].filter(p=>p.base_price!=null).sort((a,b)=>a.base_price-b.base_price)[0];
+  const bestSpa=[...props].filter(p=>p.spa).sort((a,b)=>(b.sauna_types||[]).length-(a.sauna_types||[]).length)[0];
+  const bestOverall=[...props].map(p=>({p,score:computeScore(p)})).filter(x=>x.score!=null).sort((a,b)=>b.score-a.score)[0];
+  const missingInfo=props.filter(p=>!p.base_price||!p.description||!p.country||p.dinner_score==null);
+  return `
+    <div class="page-header">
+      <div class="page-title"><small>Dashboard</small><h1>Deine Sammlung auf einen Blick</h1></div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="printReport()">PDF-Bericht</button>
+        <button class="btn btn-primary" onclick="setView('add')">+ Unterkunft hinzufügen</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Unterkünfte</div><div class="stat-value">${props.length}</div><div class="stat-sub">${favCount} Favoriten</div></div>
+      <div class="stat-card"><div class="stat-label">Mit Spa</div><div class="stat-value">${withSpa}</div><div class="stat-sub">von ${props.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Dinner bewertet</div><div class="stat-value">${withDinner}</div><div class="stat-sub">Score vorhanden</div></div>
+      <div class="stat-card"><div class="stat-label">Mit Bildern</div><div class="stat-value">${withImages}</div><div class="stat-sub">von ${props.length}</div></div>
+    </div>
+    <h2 style="margin-bottom:1.25rem;font-size:1.3rem">Highlights</h2>
+    <div class="stats-grid" style="margin-bottom:2.5rem">
+      ${cheapest?`<div class="stat-card" style="border-left:3px solid var(--brass-400);cursor:pointer" onclick="openDetail('${cheapest.id}')">
+        <div class="stat-label">Günstigste Unterkunft</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(cheapest.name)}</div>
+        <div class="stat-sub">${fmtPrice(cheapest.base_price)} / Nacht · ${escapeHtml(cheapest.city||'')}</div></div>`:''}
+      ${bestSpa?`<div class="stat-card" style="border-left:3px solid var(--forest-500);cursor:pointer" onclick="openDetail('${bestSpa.id}')">
+        <div class="stat-label">Beste Wellness-Unterkunft</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(bestSpa.name)}</div>
+        <div class="stat-sub">${bestSpa.sauna_types.length} Saunaarten · ${escapeHtml(bestSpa.city||'')}</div></div>`:''}
+      ${bestOverall?`<div class="stat-card" style="border-left:3px solid var(--info);cursor:pointer" onclick="openDetail('${bestOverall.p.id}')">
+        <div class="stat-label">Beste Gesamtwahl (Score ${bestOverall.score})</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(bestOverall.p.name)}</div>
+        <div class="stat-sub">${escapeHtml(bestOverall.p.city||'')}</div></div>`:''}
+    </div>
+    ${missingInfo.length?`
+      <div class="card" style="padding:1.25rem 1.5rem;margin-bottom:2rem;border-left:3px solid var(--warning)">
+        <strong style="color:var(--warning);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em">⚠ ${missingInfo.length} Unterkünfte mit fehlenden Informationen</strong>
+        <div style="font-size:0.85rem;color:var(--text-dim);margin-top:0.5rem">
+          ${missingInfo.slice(0,3).map(p=>`<div>• ${escapeHtml(p.name)} – ${[!p.base_price&&'Preis',!p.description&&'Beschreibung',p.dinner_score==null&&'Dinner'].filter(Boolean).join(', ')}</div>`).join('')}
+        </div>
+      </div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:1.3rem">Alle Unterkünfte</h2>
+      <button class="btn btn-ghost btn-sm" onclick="setView('properties')">Alle anzeigen →</button>
+    </div>
+    <div class="properties-grid">${props.slice(0,6).map(renderPropertyCard).join('')}</div>
+  `;
+}
+
+/* ============================================================
+   Property Card
+   ============================================================ */
+function renderPropertyCard(p){
+  const score=computeScore(p);
+  const country=p.country||'';
+  const b=effectiveBooking(p);
+  const total=totalForProperty(p);
+  const images=imageCache.get(p.id)||[];
+  const idx=state.galleryIndex[p.id]||0;
+  const curImg=images[idx];
+  return `
+    <div class="card property-card">
+      <div class="property-image" data-pid="${p.id}" onclick="openDetail('${p.id}')">
+        ${curImg?`<img src="${curImg.url}" alt="" />`:`<span class="initials">${escapeHtml(initials(p.name))}</span>`}
+        ${country?`<div class="flag">${escapeHtml(country)}</div>`:''}
+        ${images.length>1?`<div class="image-count">◧ ${idx+1}/${images.length}</div>`:images.length===1?`<div class="image-count">◧ 1</div>`:''}
+        <button class="fav-badge ${p.is_favorite?'active':''}" onclick="event.stopPropagation();toggleFavorite('${p.id}')" title="Favorit">${p.is_favorite?'★':'☆'}</button>
+      </div>
+      <div class="property-body" onclick="openDetail('${p.id}')">
+        <div>
+          <div class="property-name">${escapeHtml(p.name)}</div>
+          <div class="property-loc">${escapeHtml([p.city,p.region,p.country].filter(Boolean).join(', '))}</div>
+        </div>
+        <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+          ${p.spa?'<span class="badge-tag">Spa</span>':''}
+          ${p.dinner_score?'<span class="badge-tag">Dinner '+p.dinner_score+'/5</span>':''}
+          <span class="badge-tag">${escapeHtml(typeLabel(p.property_type))}</span>
+        </div>
+        ${b.checkin&&b.checkout?`
+          <div style="font-size:0.75rem;color:var(--text-dim);background:var(--sand-100);padding:0.35rem 0.6rem;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+            <span>${fmtDateShort(b.checkin)} → ${fmtDateShort(b.checkout)}</span>
+            <span class="nights-badge">${b.nights} ${b.nights===1?'Nacht':'Nächte'}</span>
+          </div>`:''}
+        <div class="property-price">
+          <div>
+            <div class="price-label">Preis/Nacht</div>
+            <div class="price-value">${p.base_price?fmtPrice(p.base_price):'—'}</div>
+            ${total!=null?`<div class="price-total">Gesamt: ${fmtPrice(total)}</div>`:''}
+          </div>
+          ${score!=null?`<div class="score-pill ${scoreClass(score)}" title="Gesamtscore">${score}</div>`:''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   Properties View
+   ============================================================ */
+function renderProperties(){
+  const filtered=applyFilters(state.properties);
+  const countries=[...new Set(state.properties.map(p=>p.country).filter(Boolean))].sort();
+  const types=[...new Set(state.properties.map(p=>p.property_type).filter(Boolean))].sort();
+  return `
+    <div class="page-header">
+      <div class="page-title"><small>Meine Unterkünfte</small><h1>${filtered.length} von ${state.properties.length}</h1></div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary" onclick="printReport()">PDF</button>
+        <button class="btn btn-primary" onclick="setView('add')">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="filter-bar no-print">
+      <input type="text" placeholder="Suche Name, Ort…" value="${escapeHtml(state.filters.search)}" oninput="updateFilter('search',this.value)" style="flex:1;min-width:180px" />
+      <select onchange="updateFilter('country',this.value)">
+        <option value="">Alle Länder</option>
+        ${countries.map(c=>`<option value="${escapeHtml(c)}" ${state.filters.country===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <select onchange="updateFilter('type',this.value)">
+        <option value="">Alle Typen</option>
+        ${types.map(t=>`<option value="${t}" ${state.filters.type===t?'selected':''}>${typeLabel(t)}</option>`).join('')}
+      </select>
+      <select onchange="updateFilter('mealPlan',this.value)">
+        <option value="">Verpflegung</option>
+        <option value="breakfast" ${state.filters.mealPlan==='breakfast'?'selected':''}>Frühstück</option>
+        <option value="half_board" ${state.filters.mealPlan==='half_board'?'selected':''}>Halbpension</option>
+        <option value="full_board" ${state.filters.mealPlan==='full_board'?'selected':''}>Vollpension</option>
+        <option value="room_only" ${state.filters.mealPlan==='room_only'?'selected':''}>Ohne Verpflegung</option>
+      </select>
+      <input type="number" placeholder="Max €/Nacht" value="${state.filters.maxPrice}" oninput="updateFilter('maxPrice',this.value)" style="width:120px" />
+      <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer">
+        <input type="checkbox" ${state.filters.spaOnly?'checked':''} onchange="updateFilter('spaOnly',this.checked)" /> nur Spa
+      </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer">
+        <input type="checkbox" ${state.filters.favoriteOnly?'checked':''} onchange="updateFilter('favoriteOnly',this.checked)" /> nur Favoriten
+      </label>
+      <button class="btn btn-ghost btn-sm" onclick="resetFilters()">Zurücksetzen</button>
+    </div>
+    ${filtered.length===0?`<div class="empty-state"><h3>Keine Treffer</h3><p>Passe deine Filter an.</p></div>`
+      :`<div class="properties-grid">${filtered.map(renderPropertyCard).join('')}</div>`}
+  `;
+}
+function applyFilters(list){
+  const f=state.filters;
+  return list.filter(p=>{
+    if(f.search){
+      const q=f.search.toLowerCase();
+      const hay=[p.name,p.city,p.country,p.region,p.description].filter(Boolean).join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    if(f.country&&p.country!==f.country) return false;
+    if(f.type&&p.property_type!==f.type) return false;
+    if(f.mealPlan&&p.meal_plan!==f.mealPlan) return false;
+    if(f.maxPrice&&(p.base_price==null||p.base_price>Number(f.maxPrice))) return false;
+    if(f.spaOnly&&!p.spa) return false;
+    if(f.favoriteOnly&&!p.is_favorite) return false;
+    if(f.collection&&!(p.collections||[]).includes(f.collection)) return false;
+    return true;
+  });
+}
+function updateFilter(k,v){ state.filters[k]=v; render(); }
+function resetFilters(){ state.filters={search:'',country:'',type:'',mealPlan:'',maxPrice:'',spaOnly:false,favoriteOnly:false,collection:''}; render(); }
+
+/* ============================================================
+   Add View
+   ============================================================ */
+function renderAddView(){
+  return `
+    <div class="page-header"><div class="page-title"><small>Hinzufügen</small><h1>Unterkunft hinzufügen</h1></div></div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchAddTab('manual',this)">Manuell</div>
+      <div class="tab" onclick="switchAddTab('url',this)">Per URL</div>
+      <div class="tab" onclick="switchAddTab('batch',this)">Massen-Import</div>
+    </div>
+    <div id="addTabContent">${renderManualForm()}</div>
+  `;
+}
+function switchAddTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const c=document.getElementById('addTabContent');
+  if(tab==='manual') c.innerHTML=renderManualForm();
+  else if(tab==='url') c.innerHTML=renderUrlForm();
+  else c.innerHTML=renderBatchForm();
+}
+function renderManualForm(){
+  return `
+    <div class="card" style="padding:2rem;max-width:760px">
+      <p style="color:var(--text-dim);margin-bottom:1.75rem;font-size:0.9rem">Felder außer Name sind optional. Bilder können nach dem Speichern auf der Detailseite hinzugefügt werden.</p>
+      <form onsubmit="event.preventDefault();addPropertyFromForm(this);" oninput="updateNightsReadout(this);">
+        <div class="form-row">
+          <div class="form-group"><label>Name *</label><input type="text" name="name" required placeholder="z.B. Hotel Alpenrose" /></div>
+          <div class="form-group"><label>Typ</label><select name="property_type">
+            <option value="hotel">Hotel</option><option value="boutique_hotel">Boutique-Hotel</option>
+            <option value="chalet">Chalet</option><option value="ferienhaus">Ferienhaus</option>
+            <option value="wellness_resort">Wellness-Resort</option><option value="apartment">Apartment</option>
+            <option value="pension">Pension</option><option value="gasthof">Gasthof</option>
+            <option value="other">Sonstige</option></select></div>
+        </div>
+        <div class="form-group"><label>URL</label><input type="url" name="url" placeholder="https://..." /></div>
+        <div class="form-row">
+          <div class="form-group"><label>Land</label><input type="text" name="country" placeholder="z.B. Deutschland" /></div>
+          <div class="form-group"><label>Ort</label><input type="text" name="city" placeholder="z.B. Tegernsee" /></div>
+        </div>
+        <div style="padding:1rem;background:var(--sand-100);border-radius:8px;margin-bottom:1.25rem">
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);font-weight:600;margin-bottom:0.75rem">Buchungszeitraum (optional)</div>
+          <div class="form-row-3">
+            <div class="form-group" style="margin-bottom:0"><label>Anreise</label><input type="date" name="booking_checkin" /></div>
+            <div class="form-group" style="margin-bottom:0"><label>Abreise</label><input type="date" name="booking_checkout" /></div>
+            <div class="form-group" style="margin-bottom:0"><label>Nächte (auto)</label><input type="text" id="nightsReadout" readonly placeholder="—" /></div>
+          </div>
+          <div class="form-hint" style="margin-top:0.75rem">Die Anzahl der Nächte wird automatisch aus dem Zeitraum berechnet.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Preis/Nacht (€)</label><input type="number" name="base_price" step="0.01" placeholder="z.B. 180" /></div>
+          <div class="form-group"><label>Verpflegung</label><select name="meal_plan">
+            <option value="unknown">Unbekannt</option><option value="room_only">Ohne Verpflegung</option>
+            <option value="breakfast">Frühstück</option><option value="half_board">Halbpension</option>
+            <option value="full_board">Vollpension</option><option value="all_inclusive">All Inclusive</option>
+          </select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Dinner-Score (1–5)</label><input type="number" name="dinner_score" min="1" max="5" step="1" /></div>
+          <div class="form-group"><label>Saunaarten (Komma-getrennt)</label><input type="text" name="sauna_types" placeholder="Finnische Sauna, Dampfbad" /></div>
+        </div>
+        <div class="form-group"><label>Beschreibung</label><textarea name="description" rows="3"></textarea></div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0"><input type="checkbox" name="spa" /> Spa vorhanden</label>
+          <label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0;margin-top:0.5rem"><input type="checkbox" name="is_favorite" /> Als Favorit markieren</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="setView('dashboard')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>`;
+}
+function updateNightsReadout(form){
+  const ci=form.booking_checkin?.value, co=form.booking_checkout?.value;
+  const out=document.getElementById('nightsReadout');
+  if(!out) return;
+  const n=nightsBetween(ci,co);
+  out.value=n!=null?`${n} ${n===1?'Nacht':'Nächte'}`:'—';
+}
+function renderUrlForm(){
+  return `
+    <div class="card" style="padding:2rem;max-width:720px">
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:0.9rem">URL einfügen – die App erkennt den Anbieter und legt einen Import-Job an.</p>
+      <form onsubmit="event.preventDefault();importSingleUrl(this);">
+        <div class="form-group"><label>Unterkunfts-URL</label><input type="url" name="url" required placeholder="https://..." /></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="setView('dashboard')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Importieren</button>
+        </div>
+      </form>
+      <div id="importProgress" style="margin-top:1.5rem"></div>
+    </div>`;
+}
+function renderBatchForm(){
+  return `
+    <div class="card" style="padding:2rem;max-width:720px">
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:0.9rem">Mehrere URLs, eine pro Zeile. Duplikate werden automatisch erkannt.</p>
+      <form onsubmit="event.preventDefault();importBatch(this);">
+        <div class="form-group"><label>URLs (eine pro Zeile)</label><textarea name="urls" rows="8" placeholder="https://...&#10;https://..."></textarea></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="setView('dashboard')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Alle importieren</button>
+        </div>
+      </form>
+      <div id="importProgress" style="margin-top:1.5rem"></div>
+    </div>`;
+}
+function addPropertyFromForm(form){
+  const fd=new FormData(form);
+  const name=(fd.get('name')||'').toString().trim();
+  if(!name){ toast('Name ist erforderlich'); return; }
+  const saunaRaw=(fd.get('sauna_types')||'').toString();
+  const sauna_types=saunaRaw?saunaRaw.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const basePrice=fd.get('base_price')?Number(fd.get('base_price')):null;
+  const ci=(fd.get('booking_checkin')||'').toString().trim()||null;
+  const co=(fd.get('booking_checkout')||'').toString().trim()||null;
+  if(ci&&co&&nightsBetween(ci,co)==null){ toast('Abreise muss nach Anreise liegen'); return; }
+  const p={
+    id:uid(), name, property_type:(fd.get('property_type')||'other').toString(),
+    country:(fd.get('country')||'').toString().trim()||null, city:(fd.get('city')||'').toString().trim()||null,
+    region:null, url:(fd.get('url')||'').toString().trim()||null, provider:'manual',
+    description:(fd.get('description')||'').toString().trim()||null,
+    meal_plan:(fd.get('meal_plan')||'unknown').toString(),
+    dinner_score:fd.get('dinner_score')?Number(fd.get('dinner_score')):null, dinner_notes:null,
+    spa:fd.get('spa')==='on', spa_area_sqm:null, sauna_types, amenities:[], price_note:null,
+    base_price:basePrice, booking_checkin:ci, booking_checkout:co,
+    personal_rating:null, notes:null, is_favorite:fd.get('is_favorite')==='on',
+    collections:[], image_urls:[], created_at:new Date().toISOString().slice(0,10),
+    price_history:basePrice?[{price:basePrice,date:new Date().toISOString().slice(0,10)}]:[]
+  };
+  state.properties.unshift(p);
+  save();
+  toast('Unterkunft gespeichert – jetzt Bilder hinzufügen');
+  // Direkt zur Detailseite zum Bilder hinzufügen
+  setTimeout(()=>{ openDetail(p.id); }, 300);
+}
+
+/* ============================================================
+   Import
+   ============================================================ */
+function detectProvider(url){
+  try{
+    const u=new URL(url), h=u.hostname;
+    if(h.includes('booking.com')) return 'booking';
+    if(h.includes('airbnb.')) return 'airbnb';
+    if(h.includes('escapio.')) return 'escapio';
+    if(h.includes('simplebooking.it')) return 'simplebooking';
+    if(h.includes('onepagebooking.com')) return 'onepagebooking';
+    if(h.includes('huettenland.com')) return 'huettenland';
+    return 'official';
+  }catch{ return 'unknown'; }
+}
+function canonicalize(url,provider){
+  try{
+    const u=new URL(url);
+    ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid','ref','aid',
+     'checkin','checkout','group_adults','group_children','no_rooms','selected_currency','lang',
+     'check_in','check_out','adults','children','guests','in','out','currency'].forEach(p=>u.searchParams.delete(p));
+    u.hash='';
+    let out=u.toString();
+    if(out.endsWith('/')&&u.pathname!=='/') out=out.slice(0,-1);
+    return out;
+  }catch{ return null; }
+}
+function isSafeUrl(raw){
+  try{
+    const u=new URL(raw);
+    if(!['http:','https:'].includes(u.protocol)) return false;
+    const h=u.hostname.toLowerCase();
+    if(['localhost','127.0.0.1','0.0.0.0','169.254.169.254','metadata.google.internal'].includes(h)) return false;
+    if(h.startsWith('10.')||h.startsWith('192.168.')) return false;
+    if(/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
+    if(h.endsWith('.internal')) return false;
+    return true;
+  }catch{ return false; }
+}
+function findDuplicate(url){
+  const c=canonicalize(url,detectProvider(url));
+  return state.properties.find(p=>{
+    if(!p.url) return false;
+    const pc=canonicalize(p.url,p.provider||detectProvider(p.url));
+    return c&&pc&&c===pc;
+  });
+}
+function importSingleUrl(form){
+  const url=form.url.value.trim();
+  if(!url) return;
+  if(!isSafeUrl(url)){ toast('Unzulässige URL'); return; }
+  const dup=findDuplicate(url);
+  const prog=document.getElementById('importProgress');
+  if(dup){
+    prog.innerHTML=`<div class="import-row"><span class="status duplicate">Duplikat</span><span class="url">${escapeHtml(url)}</span><span>→ ${escapeHtml(dup.name)}</span></div>`;
+    return;
+  }
+  const provider=detectProvider(url);
+  prog.innerHTML=`<div class="import-row"><span class="status pending">Lädt…</span><span class="url">${escapeHtml(url)}</span></div>`;
+  setTimeout(()=>{
+    const name=extractNameFromUrl(url);
+    const p={
+      id:uid(), name, property_type:'other', country:null, city:null, region:null,
+      url, provider, description:null, meal_plan:'unknown', dinner_score:null, dinner_notes:null,
+      spa:false, spa_area_sqm:null, sauna_types:[], amenities:[], price_note:null,
+      base_price:null, booking_checkin:null, booking_checkout:null,
+      personal_rating:null, notes:null, is_favorite:false, collections:[], image_urls:[],
+      created_at:new Date().toISOString().slice(0,10), price_history:[]
+    };
+    state.properties.unshift(p); save();
+    prog.innerHTML=`<div class="import-row"><span class="status success">Erfolg</span><span class="url">${escapeHtml(url)}</span><span>→ ${escapeHtml(name)}</span></div>`;
+    toast('Unterkunft importiert');
+    setTimeout(()=>setView('properties'),800);
+  },400);
+}
+function importBatch(form){
+  const urls=form.urls.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!urls.length) return;
+  const prog=document.getElementById('importProgress');
+  prog.innerHTML='';
+  let done=0;
+  urls.forEach((url,i)=>{
+    setTimeout(()=>{
+      if(!isSafeUrl(url)){
+        prog.innerHTML+=`<div class="import-row"><span class="status failed">Ungültig</span><span class="url">${escapeHtml(url)}</span></div>`;
+        done++; return;
+      }
+      const dup=findDuplicate(url);
+      if(dup){
+        prog.innerHTML+=`<div class="import-row"><span class="status duplicate">Duplikat</span><span class="url">${escapeHtml(url)}</span><span>→ ${escapeHtml(dup.name)}</span></div>`;
+      } else {
+        const provider=detectProvider(url);
+        const name=extractNameFromUrl(url);
+        state.properties.unshift({
+          id:uid(), name, property_type:'other', country:null, city:null, region:null,
+          url, provider, description:null, meal_plan:'unknown', dinner_score:null, dinner_notes:null,
+          spa:false, spa_area_sqm:null, sauna_types:[], amenities:[], price_note:null,
+          base_price:null, booking_checkin:null, booking_checkout:null,
+          personal_rating:null, notes:null, is_favorite:false, collections:[], image_urls:[],
+          created_at:new Date().toISOString().slice(0,10), price_history:[]
+        });
+        prog.innerHTML+=`<div class="import-row"><span class="status success">Erfolg</span><span class="url">${escapeHtml(url)}</span><span>→ ${escapeHtml(name)}</span></div>`;
+      }
+      done++;
+      if(done===urls.length){
+        save(); toast(`${urls.length} URLs verarbeitet`);
+        setTimeout(()=>setView('properties'),1000);
+      }
+    },i*250);
+  });
+}
+function extractNameFromUrl(url){
+  try{
+    const u=new URL(url);
+    let seg=u.pathname.split('/').filter(Boolean).pop()||u.hostname;
+    seg=seg.replace(/\.(html?|php|aspx?)$/i,'').replace(/[-_]+/g,' ');
+    seg=seg.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+    return seg||u.hostname;
+  }catch{ return 'Unterkunft'; }
+}
+
+/* ============================================================
+   Detail View
+   ============================================================ */
+function openDetail(id){
+  state.currentId=id;
+  state.currentView='detail';
+  document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.remove('active'));
+  // Wenn noch nicht geladen, laden
+  if(!imageCache.has(id)) loadImages(id).then(()=>render());
+  render();
+}
+function renderDetail(){
+  const p=state.properties.find(x=>x.id===state.currentId);
+  if(!p) return `<div class="empty-state"><h3>Unterkunft nicht gefunden</h3></div>`;
+  const score=computeScore(p);
+  const history=p.price_history||[];
+  const b=effectiveBooking(p);
+  const total=totalForProperty(p);
+  const images=imageCache.get(p.id)||[];
+  return `
+    <button class="btn btn-ghost btn-sm" onclick="setView('properties')" style="margin-bottom:1.5rem">← Zurück</button>
+    <div class="detail-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h1>${escapeHtml(p.name)}</h1>
+          <div class="loc">${escapeHtml([p.city,p.region,p.country].filter(Boolean).join(' · '))}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="toggleFavorite('${p.id}')">${p.is_favorite?'★ Favorit':'☆ Favorisieren'}</button>
+          <button class="btn btn-secondary" onclick="openEditModal('${p.id}')">Bearbeiten</button>
+          <button class="btn btn-secondary" onclick="updatePrice('${p.id}')">Preis aktualisieren</button>
+          <button class="btn btn-danger" onclick="deleteProperty('${p.id}')">Löschen</button>
+        </div>
+      </div>
+    </div>
+
+    ${renderGallery(p.id)}
+
+    ${renderImageUpload(p.id)}
+
+    <div class="detail-grid">
+      <div class="detail-block"><h4>Typ</h4><div class="value-sm">${escapeHtml(typeLabel(p.property_type))}</div></div>
+      <div class="detail-block"><h4>Verpflegung</h4><div class="value-sm">${escapeHtml(mealLabel(p.meal_plan))}</div></div>
+      <div class="detail-block"><h4>Preis/Nacht</h4><div class="value">${p.base_price?fmtPrice(p.base_price):'—'}</div></div>
+      <div class="detail-block"><h4>Dinner-Score</h4><div class="value">${p.dinner_score?p.dinner_score+' / 5':'—'}</div></div>
+      <div class="detail-block"><h4>Spa</h4><div class="value-sm">${p.spa?'Vorhanden':'Nicht erfasst'}</div></div>
+      <div class="detail-block"><h4>Saunaarten</h4><div class="value-sm">${(p.sauna_types||[]).join(', ')||'—'}</div></div>
+      ${score!=null?`<div class="detail-block"><h4>Gesamtscore</h4><div class="value">${score}</div></div>`:''}
+    </div>
+
+    <div class="detail-block" style="margin-bottom:1.5rem;border-left:3px solid var(--brass-400)">
+      <h4>Buchungszeitraum</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.25rem;margin-top:0.5rem">
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600">Anreise</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--forest-800);font-weight:600;margin-top:0.25rem">${b.checkin?fmtDateShort(b.checkin):'—'}</div>
+          ${p.booking_checkin?`<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.2rem">Eigener Wert: ${fmtDateShort(p.booking_checkin)}</div>`:''}
+        </div>
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600">Abreise</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--forest-800);font-weight:600;margin-top:0.25rem">${b.checkout?fmtDateShort(b.checkout):'—'}</div>
+          ${p.booking_checkout?`<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.2rem">Eigener Wert: ${fmtDateShort(p.booking_checkout)}</div>`:''}
+        </div>
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600">Nächte (auto)</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--forest-800);font-weight:600;margin-top:0.25rem">${b.nights!=null?b.nights:'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);font-weight:600">Gesamtpreis</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--forest-800);font-weight:600;margin-top:0.25rem">${total!=null?fmtPrice(total):'—'}</div>
+          ${total!=null?`<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.2rem">${fmtPrice(p.base_price)} × ${b.nights} ${b.nights===1?'Nacht':'Nächte'}</div>`:''}
+        </div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--sand-100)">
+        Quelle: ${b.source==='eigen'?'Eigener Zeitraum dieser Unterkunft':b.source==='kontext'?'Globaler Vergleichskontext':'Kein Zeitraum definiert'}
+      </div>
+    </div>
+
+    ${p.description?`<div class="detail-block" style="margin-bottom:1.5rem"><h4>Beschreibung</h4><p style="font-size:0.9rem;line-height:1.7;color:var(--text)">${escapeHtml(p.description)}</p></div>`:''}
+    ${p.dinner_notes?`<div class="detail-block" style="margin-bottom:1.5rem"><h4>Dinner / Restaurant</h4><p style="font-size:0.9rem;line-height:1.7;color:var(--text)">${escapeHtml(p.dinner_notes)}</p></div>`:''}
+    ${(p.amenities||[]).length?`<div class="detail-block" style="margin-bottom:1.5rem"><h4>Ausstattung</h4><div style="display:flex;gap:0.4rem;flex-wrap:wrap">${p.amenities.map(a=>`<span class="badge-tag">${escapeHtml(a)}</span>`).join('')}</div></div>`:''}
+    ${p.price_note?`<div class="detail-block" style="margin-bottom:1.5rem"><h4>Preis-Notiz</h4><p style="font-size:0.9rem;color:var(--text)">${escapeHtml(p.price_note)}</p></div>`:''}
+
+    <div class="detail-block" style="margin-bottom:1.5rem">
+      <h4>Sammlungen</h4>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem" id="collectionList">${renderCollectionChips(p)}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:0.75rem" onclick="promptNewCollection('${p.id}')">+ Neue Sammlung</button>
+    </div>
+
+    <div class="detail-block" style="margin-bottom:1.5rem">
+      <h4>Persönliche Bewertung (1–5)</h4>
+      <div style="display:flex;gap:0.35rem;margin-top:0.5rem">
+        ${[1,2,3,4,5].map(n=>`<button onclick="setRating('${p.id}',${n})" style="font-size:1.6rem;color:${(p.personal_rating||0)>=n?'var(--brass-500)':'var(--sand-300)'};background:none;padding:0;cursor:pointer">★</button>`).join('')}
+        ${p.personal_rating?`<button class="btn btn-ghost btn-sm" style="margin-left:0.75rem" onclick="setRating('${p.id}',null)">Zurücksetzen</button>`:''}
+      </div>
+    </div>
+
+    <div class="detail-block" style="margin-bottom:1.5rem">
+      <h4>Notizen</h4>
+      <textarea id="notesField" rows="4" placeholder="Persönliche Notizen…" style="width:100%;margin-top:0.5rem" onblur="saveNotes('${p.id}',this.value)">${escapeHtml(p.notes||'')}</textarea>
+    </div>
+
+    ${history.length>=2?`
+      <div class="detail-block" style="margin-bottom:1.5rem">
+        <h4>Preisverlauf (${history.length} Einträge)</h4>
+        <canvas id="detailChart" class="chart" style="margin-top:0.75rem"></canvas>
+      </div>`:''}
+
+    ${p.url?`<div class="detail-block"><h4>Original-Link</h4>
+      <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="font-size:0.9rem;word-break:break-all">${escapeHtml(p.url)}</a>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem">Anbieter: ${escapeHtml(providerLabel(p.provider))}</div>
+    </div>`:''}
+  `;
+}
+function renderCollectionChips(p){
+  if(!state.collections.length) return '<span style="color:var(--text-dim);font-size:0.85rem">Noch keine Sammlungen</span>';
+  return state.collections.map(c=>{
+    const active=(p.collections||[]).includes(c);
+    return `<span class="collection-chip ${active?'active':''}" onclick="toggleCollection('${p.id}','${escapeHtml(c)}')">
+      ${escapeHtml(c)} <span class="del" onclick="event.stopPropagation();deleteCollection('${escapeHtml(c)}')">×</span>
+    </span>`;
+  }).join('');
+}
+function toggleCollection(id,c){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  if(!p.collections) p.collections=[];
+  const i=p.collections.indexOf(c);
+  if(i>=0) p.collections.splice(i,1); else p.collections.push(c);
+  save();
+  const el=document.getElementById('collectionList');
+  if(el) el.innerHTML=renderCollectionChips(p); else render();
+}
+function promptNewCollection(id){
+  const name=prompt('Name der neuen Sammlung:');
+  if(!name) return;
+  if(!state.collections.includes(name)) state.collections.push(name);
+  if(id) toggleCollection(id,name); save();
+  if(!id) render();
+}
+function deleteCollection(c){
+  if(!confirm(`Sammlung "${c}" löschen?`)) return;
+  state.collections=state.collections.filter(x=>x!==c);
+  state.properties.forEach(p=>{ if(p.collections) p.collections=p.collections.filter(x=>x!==c); });
+  save(); render();
+}
+function setRating(id,n){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  p.personal_rating=n; save(); render();
+}
+function toggleFavorite(id){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  p.is_favorite=!p.is_favorite; save(); render();
+  toast(p.is_favorite?'Zu Favoriten hinzugefügt':'Aus Favoriten entfernt');
+}
+async function deleteProperty(id){
+  if(!confirm('Unterkunft wirklich löschen? Bilder werden ebenfalls entfernt.')) return;
+  try{ await imgDB.delByProperty(id); }catch(e){}
+  clearImageCache(id);
+  state.properties=state.properties.filter(p=>p.id!==id);
+  save(); setView('properties');
+  toast('Unterkunft gelöscht');
+}
+function saveNotes(id,value){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  p.notes=value; save(); toast('Notizen gespeichert');
+}
+function updatePrice(id){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  const val=prompt(`Neuer Preis pro Nacht für "${p.name}" in €:`,p.base_price||'');
+  if(val==null||val==='') return;
+  const num=Number(val);
+  if(isNaN(num)||num<0){ toast('Ungültiger Preis'); return; }
+  p.base_price=num;
+  if(!p.price_history) p.price_history=[];
+  p.price_history.push({price:num,date:new Date().toISOString().slice(0,10)});
+  save(); toast('Preis aktualisiert'); render();
+}
+function openEditModal(id){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  const html=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <h2>Unterkunft bearbeiten</h2>
+        <form onsubmit="event.preventDefault();saveEdit('${p.id}',this);" oninput="updateNightsReadout(this);">
+          <div class="form-group"><label>Name</label><input type="text" name="name" value="${escapeHtml(p.name)}" required /></div>
+          <div class="form-row">
+            <div class="form-group"><label>Typ</label><select name="property_type">
+              ${['hotel','boutique_hotel','chalet','ferienhaus','wellness_resort','apartment','pension','gasthof','other'].map(t=>`<option value="${t}" ${p.property_type===t?'selected':''}>${typeLabel(t)}</option>`).join('')}
+            </select></div>
+            <div class="form-group"><label>Verpflegung</label><select name="meal_plan">
+              ${[['unknown','Unbekannt'],['room_only','Ohne Verpflegung'],['breakfast','Frühstück'],['half_board','Halbpension'],['full_board','Vollpension'],['all_inclusive','All Inclusive']].map(([v,l])=>`<option value="${v}" ${p.meal_plan===v?'selected':''}>${l}</option>`).join('')}
+            </select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Land</label><input type="text" name="country" value="${escapeHtml(p.country||'')}" /></div>
+            <div class="form-group"><label>Ort</label><input type="text" name="city" value="${escapeHtml(p.city||'')}" /></div>
+          </div>
+          <div style="padding:1rem;background:var(--sand-100);border-radius:8px;margin-bottom:1.25rem">
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);font-weight:600;margin-bottom:0.75rem">Buchungszeitraum</div>
+            <div class="form-row-3">
+              <div class="form-group" style="margin-bottom:0"><label>Anreise</label><input type="date" name="booking_checkin" value="${p.booking_checkin||''}" /></div>
+              <div class="form-group" style="margin-bottom:0"><label>Abreise</label><input type="date" name="booking_checkout" value="${p.booking_checkout||''}" /></div>
+              <div class="form-group" style="margin-bottom:0"><label>Nächte (auto)</label><input type="text" id="nightsReadout" readonly value="${nightsBetween(p.booking_checkin,p.booking_checkout)?nightsBetween(p.booking_checkin,p.booking_checkout)+' Nächte':'—'}" /></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Preis/Nacht (€)</label><input type="number" name="base_price" step="0.01" value="${p.base_price||''}" /></div>
+            <div class="form-group"><label>Dinner-Score (1–5)</label><input type="number" name="dinner_score" min="1" max="5" value="${p.dinner_score||''}" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Saunaarten</label><input type="text" name="sauna_types" value="${escapeHtml((p.sauna_types||[]).join(', '))}" /></div>
+            <div class="form-group"><label>URL</label><input type="url" name="url" value="${escapeHtml(p.url||'')}" /></div>
+          </div>
+          <div class="form-group"><label>Beschreibung</label><textarea name="description" rows="3">${escapeHtml(p.description||'')}</textarea></div>
+          <div class="form-group"><label>Dinner-Notizen</label><textarea name="dinner_notes" rows="2">${escapeHtml(p.dinner_notes||'')}</textarea></div>
+          <div class="form-group"><label>Preis-Notiz</label><input type="text" name="price_note" value="${escapeHtml(p.price_note||'')}" /></div>
+          <div class="form-group"><label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0"><input type="checkbox" name="spa" ${p.spa?'checked':''} /> Spa vorhanden</label></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+            <button type="submit" class="btn btn-primary">Speichern</button>
+          </div>
+        </form>
+        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);font-weight:600;margin-bottom:0.75rem">Bilder</div>
+          ${renderImageUpload(p.id)}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modalRoot').innerHTML=html;
+  // Bilder für den Upload-Bereich laden
+  if(!imageCache.has(p.id)) loadImages(p.id).then(()=>{});
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function saveEdit(id,form){
+  const p=state.properties.find(x=>x.id===id);
+  if(!p) return;
+  const fd=new FormData(form);
+  const oldPrice=p.base_price;
+  const ci=(fd.get('booking_checkin')||'').toString().trim()||null;
+  const co=(fd.get('booking_checkout')||'').toString().trim()||null;
+  if(ci&&co&&nightsBetween(ci,co)==null){ toast('Abreise muss nach Anreise liegen'); return; }
+  p.name=(fd.get('name')||'').toString().trim();
+  p.property_type=(fd.get('property_type')||'other').toString();
+  p.meal_plan=(fd.get('meal_plan')||'unknown').toString();
+  p.country=(fd.get('country')||'').toString().trim()||null;
+  p.city=(fd.get('city')||'').toString().trim()||null;
+  p.base_price=fd.get('base_price')?Number(fd.get('base_price')):null;
+  p.booking_checkin=ci; p.booking_checkout=co;
+  p.dinner_score=fd.get('dinner_score')?Number(fd.get('dinner_score')):null;
+  p.sauna_types=(fd.get('sauna_types')||'').toString().split(',').map(s=>s.trim()).filter(Boolean);
+  p.url=(fd.get('url')||'').toString().trim()||null;
+  p.description=(fd.get('description')||'').toString().trim()||null;
+  p.dinner_notes=(fd.get('dinner_notes')||'').toString().trim()||null;
+  p.price_note=(fd.get('price_note')||'').toString().trim()||null;
+  p.spa=fd.get('spa')==='on';
+  if(p.base_price!=null && p.base_price!==oldPrice){
+    if(!p.price_history) p.price_history=[];
+    p.price_history.push({price:p.base_price,date:new Date().toISOString().slice(0,10)});
+  }
+  save(); closeModal(); toast('Gespeichert'); render();
+}
+
+/* ============================================================
+   Compare View
+   ============================================================ */
+function renderCompare(){
+  const props=state.properties;
+  if(!props.length) return `<div class="empty-state"><h3>Keine Unterkünfte zum Vergleichen</h3></div>`;
+  const selected=state.compareSelection.map(id=>props.find(p=>p.id===id)).filter(Boolean);
+  const sorted=[...props].sort(sortFn);
+  const ctx=state.compareContext;
+  const ctxNights=nightsBetween(ctx.checkIn,ctx.checkOut);
+  const withPrice=props.filter(p=>p.base_price!=null&&totalForProperty(p)!=null);
+  const avgTotal=withPrice.length?withPrice.reduce((a,p)=>a+(totalForProperty(p)||0),0)/withPrice.length:null;
+  const cheapestTotal=[...withPrice].map(p=>({p,t:totalForProperty(p)})).filter(x=>x.t!=null).sort((a,b)=>a.t-b.t)[0];
+  return `
+    <div class="page-header">
+      <div class="page-title"><small>Vergleich</small><h1>Unterkünfte vergleichen</h1></div>
+      <button class="btn btn-secondary" onclick="printReport()">PDF</button>
+    </div>
+    <div class="context-bar no-print">
+      <div class="ctx-field"><label>Anreise (Kontext)</label><input type="date" value="${ctx.checkIn}" onchange="updateCompareContext('checkIn',this.value)" /></div>
+      <div class="ctx-field"><label>Abreise (Kontext)</label><input type="date" value="${ctx.checkOut}" onchange="updateCompareContext('checkOut',this.value)" /></div>
+      <div class="ctx-field"><label>Nächte (auto)</label><input type="text" readonly value="${ctxNights!=null?ctxNights+(ctxNights===1?' Nacht':' Nächte'):'—'}" /></div>
+      <div class="ctx-field"><label>Erwachsene</label><input type="number" min="1" max="20" value="${ctx.adults||2}" onchange="updateCompareContext('adults',this.value)" /></div>
+      <label class="ctx-toggle">
+        <input type="checkbox" ${ctx.usePropertyValues?'checked':''} onchange="updateCompareContext('usePropertyValues',this.checked)" />
+        Eigene Werte pro Unterkunft
+      </label>
+      <div class="ctx-summary">
+        ${cheapestTotal?`<div><strong>Günstigster Gesamtpreis:</strong> ${fmtPrice(cheapestTotal.t)}<br><span style="font-size:0.75rem">${escapeHtml(cheapestTotal.p.name)}</span></div>`:''}
+        ${avgTotal!=null?`<div style="margin-top:0.3rem"><strong>Ø Gesamtpreis:</strong> ${fmtPrice(avgTotal)}</div>`:''}
+      </div>
+    </div>
+    <div class="compare-selector no-print">
+      <div style="width:100%;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);font-weight:600;margin-bottom:0.4rem">Für Detailvergleich (${selected.length}/5)</div>
+      ${props.map(p=>`<div class="compare-chip ${state.compareSelection.includes(p.id)?'selected':''}" onclick="toggleCompare('${p.id}')">${escapeHtml(p.name)}</div>`).join('')}
+    </div>
+    ${selected.length>=2?`
+      <h2 style="font-size:1.3rem;margin-bottom:1rem">Detailvergleich</h2>
+      <div class="table-wrap" style="margin-bottom:2.5rem">
+        <table><thead><tr><th>Merkmal</th>${selected.map(p=>`<th>${escapeHtml(p.name)}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${compareRow('Ort',selected,p=>[p.city,p.country].filter(Boolean).join(', '))}
+          ${compareRow('Typ',selected,p=>typeLabel(p.property_type))}
+          ${compareRow('Verpflegung',selected,p=>mealLabel(p.meal_plan))}
+          ${compareRow('Anreise',selected,p=>{const b=effectiveBooking(p);return b.checkin?fmtDateShort(b.checkin):'—';})}
+          ${compareRow('Abreise',selected,p=>{const b=effectiveBooking(p);return b.checkout?fmtDateShort(b.checkout):'—';})}
+          ${compareRow('Nächte',selected,p=>{const b=effectiveBooking(p);return b.nights!=null?String(b.nights):'—';})}
+          ${compareRow('Preis/Nacht',selected,p=>p.base_price?fmtPrice(p.base_price):'—')}
+          ${compareRow('Gesamtpreis',selected,p=>{const t=totalForProperty(p);return t!=null?fmtPrice(t):'—';})}
+          ${compareRow('Preis/Person',selected,p=>{const t=totalForProperty(p);const a=state.compareContext.adults||2;return t!=null&&a>0?fmtPrice(t/a):'—';})}
+          ${compareRow('Dinner-Score',selected,p=>p.dinner_score?p.dinner_score+' / 5':'—')}
+          ${compareRow('Spa',selected,p=>p.spa?'Ja':'Nein')}
+          ${compareRow('Saunaarten',selected,p=>(p.sauna_types||[]).join(', ')||'—')}
+          ${compareRow('Gesamtscore',selected,p=>{const s=computeScore(p);return s!=null?String(s):'—';})}
+        </tbody></table>
+      </div>`:''}
+    <h2 style="font-size:1.3rem;margin-bottom:1rem">Alle Unterkünfte</h2>
+    <div class="table-wrap">
+      <table><thead><tr>
+        ${th('name','Name')}${th('city','Ort')}${th('property_type','Typ')}${th('meal_plan','Verpflegung')}
+        <th>Anreise</th><th>Abreise</th><th>Nächte</th>${th('base_price','Preis/Nacht')}<th>Gesamtpreis</th>
+        ${th('dinner_score','Dinner')}${th('spa','Spa')}<th>Score</th>
+      </tr></thead><tbody>
+        ${sorted.map(p=>{
+          const b=effectiveBooking(p);
+          const t=totalForProperty(p);
+          return `<tr onclick="openDetail('${p.id}')" style="cursor:pointer">
+            <td><strong>${escapeHtml(p.name)}</strong></td>
+            <td>${escapeHtml([p.city,p.country].filter(Boolean).join(', '))}</td>
+            <td>${escapeHtml(typeLabel(p.property_type))}</td>
+            <td>${escapeHtml(mealLabel(p.meal_plan))}</td>
+            <td>${b.checkin?fmtDateShort(b.checkin):'—'}</td>
+            <td>${b.checkout?fmtDateShort(b.checkout):'—'}</td>
+            <td>${b.nights!=null?`<span class="nights-badge">${b.nights}</span>`:'—'}</td>
+            <td>${p.base_price?fmtPrice(p.base_price):'—'}</td>
+            <td class="total-cell">${t!=null?fmtPrice(t):'—'}</td>
+            <td>${p.dinner_score?p.dinner_score+'/5':'—'}</td>
+            <td>${p.spa?'✓':'—'}</td>
+            <td><strong style="color:var(--forest-700)">${computeScore(p)??'—'}</strong></td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+  `;
+}
+function updateCompareContext(key,value){
+  if(key==='adults'){
+    const n=Number(value);
+    if(isNaN(n)||n<1){ toast('Ungültiger Wert'); return; }
+    state.compareContext[key]=n;
+  } else if(key==='usePropertyValues'){
+    state.compareContext.usePropertyValues=value;
+  } else {
+    state.compareContext[key]=value||'';
+  }
+  save(); render();
+}
+function compareRow(label,items,fn){
+  return `<tr><td><strong>${label}</strong></td>${items.map(p=>`<td>${escapeHtml(fn(p))}</td>`).join('')}</tr>`;
+}
+function th(col,label){
+  const active=state.sort.column===col;
+  const arrow=active?(state.sort.direction==='asc'?'▲':'▼'):'';
+  return `<th onclick="sortBy('${col}')">${label}<span class="sort-arrow">${arrow}</span></th>`;
+}
+function sortBy(col){
+  if(state.sort.column===col) state.sort.direction=state.sort.direction==='asc'?'desc':'asc';
+  else { state.sort.column=col; state.sort.direction='asc'; }
+  render();
+}
+function sortFn(a,b){
+  const col=state.sort.column, dir=state.sort.direction==='asc'?1:-1;
+  let av=a[col], bv=b[col];
+  if(col==='spa'){ av=a.spa?1:0; bv=b.spa?1:0; }
+  if(av==null&&bv==null) return 0;
+  if(av==null) return 1;
+  if(bv==null) return -1;
+  if(typeof av==='string') return av.localeCompare(bv)*dir;
+  return (av-bv)*dir;
+}
+function toggleCompare(id){
+  const i=state.compareSelection.indexOf(id);
+  if(i>=0) state.compareSelection.splice(i,1);
+  else {
+    if(state.compareSelection.length>=5){ toast('Maximal 5 vergleichbar'); return; }
+    state.compareSelection.push(id);
+  }
+  render();
+}
+
+/* ============================================================
+   Search View
+   ============================================================ */
+function renderSearchView(){
+  const sc=state.searchContext||{checkIn:'',checkOut:'',adults:2,children:0,rooms:1,maxBudget:''};
+  const nights=nightsBetween(sc.checkIn,sc.checkOut);
+  return `
+    <div class="page-header"><div class="page-title"><small>Suche</small><h1>Preis- & Verfügbarkeitssuche</h1></div></div>
+    <div class="search-panel">
+      <h3>Reisekontext definieren</h3>
+      <form onsubmit="event.preventDefault();runSearch(this);" oninput="updateSearchNightsReadout(this);">
+        <div class="search-grid">
+          <div class="search-field"><label>Anreise</label><input type="date" name="checkIn" value="${sc.checkIn}" required /></div>
+          <div class="search-field"><label>Abreise</label><input type="date" name="checkOut" value="${sc.checkOut}" required /></div>
+          <div class="search-field"><label>Nächte (auto)</label><input type="text" id="searchNightsReadout" readonly value="${nights!=null?nights+(nights===1?' Nacht':' Nächte'):'—'}" /></div>
+          <div class="search-field"><label>Erwachsene</label><input type="number" name="adults" min="1" max="20" value="${sc.adults}" required /></div>
+          <div class="search-field"><label>Kinder</label><input type="number" name="children" min="0" max="10" value="${sc.children}" /></div>
+          <div class="search-field"><label>Zimmer</label><input type="number" name="rooms" min="1" max="10" value="${sc.rooms}" required /></div>
+          <div class="search-field"><label>Max. Budget (€)</label><input type="number" name="maxBudget" min="0" step="10" value="${sc.maxBudget||''}" placeholder="optional" /></div>
+          <div class="search-field"><button type="submit" class="btn btn-primary" style="width:100%">Suche starten</button></div>
+        </div>
+      </form>
+    </div>
+    ${state.lastSearch?renderSearchResults():`<div class="empty-state"><h3>Noch keine Suche durchgeführt</h3><p>Definiere Reisezeitraum und Personenzahl.</p></div>`}
+  `;
+}
+function updateSearchNightsReadout(form){
+  const ci=form.checkIn?.value, co=form.checkOut?.value;
+  const out=document.getElementById('searchNightsReadout');
+  if(!out) return;
+  const n=nightsBetween(ci,co);
+  out.value=n!=null?`${n} ${n===1?'Nacht':'Nächte'}`:'—';
+}
+function runSearch(form){
+  const fd=new FormData(form);
+  const checkIn=fd.get('checkIn'), checkOut=fd.get('checkOut');
+  const adults=Number(fd.get('adults')), children=Number(fd.get('children')), rooms=Number(fd.get('rooms'));
+  const maxBudget=fd.get('maxBudget')?Number(fd.get('maxBudget')):null;
+  if(!checkIn||!checkOut){ toast('Datum erforderlich'); return; }
+  const nights=nightsBetween(checkIn,checkOut);
+  if(nights==null){ toast('Abreise muss nach Anreise liegen'); return; }
+  if(adults<1){ toast('Mindestens 1 Erwachsener'); return; }
+  const results=state.properties.map(p=>{
+    const base=p.base_price;
+    const persons=adults+children*0.5;
+    const total=base!=null?Math.round(base*nights*(persons/2)*100)/100:null;
+    return {
+      property:p, nights, adults, children, rooms,
+      total_price:total, nightly:base,
+      per_person:total!=null&&adults>0?Math.round((total/(adults+children))*100)/100:null,
+      available:base!=null, checked_at:new Date().toISOString(), currency:'EUR', is_estimate:base!=null,
+      source:'Manuell gepflegter Preis'
+    };
+  });
+  state.lastSearch={checkIn,checkOut,nights,adults,children,rooms,maxBudget,results,timestamp:new Date().toISOString()};
+  state.compareContext.checkIn=checkIn; state.compareContext.checkOut=checkOut; state.compareContext.adults=adults;
+  save(); render();
+}
+function renderSearchResults(){
+  const s=state.lastSearch;
+  const results=s.results.filter(r=>r.available&&(s.maxBudget==null||r.total_price<=s.maxBudget));
+  results.sort((a,b)=>(a.total_price||Infinity)-(b.total_price||Infinity));
+  const cheapest=results[0];
+  const cheapestHB=results.filter(r=>r.property.meal_plan==='half_board')[0];
+  const cheapestFB=results.filter(r=>r.property.meal_plan==='breakfast')[0];
+  return `
+    <h2 style="font-size:1.3rem;margin-bottom:1rem">Ergebnisse</h2>
+    <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem">
+      ${fmtDate(s.checkIn)} → ${fmtDate(s.checkOut)} · ${s.nights} Nächte · ${s.adults} Erw.${s.children?', '+s.children+' Kinder':''} · ${s.rooms} Zimmer
+      ${s.maxBudget?' · Budget max. '+fmtPrice(s.maxBudget):''}
+    </div>
+    <div class="stats-grid" style="margin-bottom:2rem">
+      ${cheapest?`<div class="stat-card" style="border-left:3px solid var(--brass-400)">
+        <div class="stat-label">Günstigstes Angebot</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(cheapest.property.name)}</div>
+        <div class="stat-sub">${fmtPrice(cheapest.total_price)} gesamt · ${fmtPrice(cheapest.per_person)}/Person</div>
+      </div>`:''}
+      ${cheapestFB?`<div class="stat-card" style="border-left:3px solid var(--info)">
+        <div class="stat-label">Günstigstes mit Frühstück</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(cheapestFB.property.name)}</div>
+        <div class="stat-sub">${fmtPrice(cheapestFB.total_price)} gesamt</div>
+      </div>`:''}
+      ${cheapestHB?`<div class="stat-card" style="border-left:3px solid var(--forest-500)">
+        <div class="stat-label">Günstigstes mit Halbpension</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--forest-800);margin:0.25rem 0">${escapeHtml(cheapestHB.property.name)}</div>
+        <div class="stat-sub">${fmtPrice(cheapestHB.total_price)} gesamt</div>
+      </div>`:''}
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>Unterkunft</th><th>Ort</th><th>Verpflegung</th><th>Gesamt</th><th>Nacht</th><th>Pro Person</th><th>Status</th>
+      </tr></thead><tbody>
+        ${results.map(r=>`<tr onclick="openDetail('${r.property.id}')" style="cursor:pointer">
+          <td><strong>${escapeHtml(r.property.name)}</strong></td>
+          <td>${escapeHtml([r.property.city,r.property.country].filter(Boolean).join(', '))}</td>
+          <td>${escapeHtml(mealLabel(r.property.meal_plan))}</td>
+          <td class="total-cell">${fmtPrice(r.total_price)}</td>
+          <td>${fmtPrice(r.nightly)}</td>
+          <td>${fmtPrice(r.per_person)}</td>
+          <td><span style="background:var(--sand-100);color:var(--taupe-600);padding:0.15rem 0.6rem;border-radius:20px;font-size:0.65rem;font-weight:600;text-transform:uppercase">Schätzung</span></td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-dim);margin-top:1rem">
+      ⓘ Preise basieren auf manuell gepflegten Nächtigungspreisen × Nächte (auto aus Zeitraum). Für Live-Preise ist eine autorisierte API-Anbindung erforderlich.
+    </p>
+  `;
+}
+
+/* ============================================================
+   Map View
+   ============================================================ */
+function renderMapView(){
+  return `
+    <div class="page-header">
+      <div class="page-title"><small>Karte</small><h1>Unterkünfte auf der Karte</h1></div>
+      <div style="font-size:0.85rem;color:var(--text-dim)">${state.properties.filter(p=>COORDS[p.id]).length} von ${state.properties.length} verortet</div>
+    </div>
+    <div id="map"></div>
+  `;
+}
+function initMap(){
+  const el=document.getElementById('map');
+  if(!el||typeof L==='undefined') return;
+  if(state.mapInstance){ try{ state.mapInstance.remove(); }catch(e){} }
+  state.mapInstance=L.map('map').setView([50,10],4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(state.mapInstance);
+  const bounds=[];
+  state.properties.forEach(p=>{
+    const c=COORDS[p.id];
+    if(!c) return;
+    bounds.push(c);
+    const images=imageCache.get(p.id)||[];
+    const thumb=images[0]?`<img src="${images[0].url}" style="width:100%;height:80px;object-fit:cover;border-radius:4px;margin-bottom:0.4rem" />`:'';
+    const marker=L.marker(c).addTo(state.mapInstance);
+    const b=effectiveBooking(p);
+    const total=totalForProperty(p);
+    marker.bindPopup(`
+      <div style="font-family:'Inter',sans-serif;min-width:200px">
+        ${thumb}
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;margin-bottom:0.3rem">${escapeHtml(p.name)}</div>
+        <div style="font-size:0.8rem;color:#786b5e;margin-bottom:0.5rem">${escapeHtml([p.city,p.country].filter(Boolean).join(', '))}</div>
+        ${p.base_price?`<div style="font-weight:600">${fmtPrice(p.base_price)} / Nacht</div>`:''}
+        ${b.checkin&&b.checkout?`<div style="font-size:0.8rem">${fmtDateShort(b.checkin)} → ${fmtDateShort(b.checkout)} (${b.nights} ${b.nights===1?'Nacht':'Nächte'})</div>`:''}
+        ${total!=null?`<div style="font-weight:600;color:#254e3f">Gesamt: ${fmtPrice(total)}</div>`:''}
+        <button onclick="openDetail('${p.id}')" style="margin-top:0.5rem;padding:0.3rem 0.7rem;font-size:0.75rem;border-radius:4px;background:#254e3f;color:white;border:none;cursor:pointer">Details</button>
+      </div>`);
+  });
+  if(bounds.length) state.mapInstance.fitBounds(bounds,{padding:[40,40],maxZoom:8});
+}
+
+/* ============================================================
+   History View
+   ============================================================ */
+function renderHistoryView(){
+  const propsWithHistory=state.properties.filter(p=>(p.price_history||[]).length>0);
+  return `
+    <div class="page-header"><div class="page-title"><small>Preisverlauf</small><h1>Historische Preisentwicklung</h1></div></div>
+    ${propsWithHistory.length===0?`<div class="empty-state"><h3>Kein Preisverlauf vorhanden</h3><p>Aktualisiere Preise über die Detailseite.</p></div>`:`
+      <div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+          <label style="font-size:0.85rem;font-weight:500">Unterkunft:</label>
+          <select onchange="state.historyProperty=this.value;render();" style="min-width:220px">
+            ${propsWithHistory.map(p=>`<option value="${p.id}" ${state.historyProperty===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+          </select>
+        </div>
+        ${renderHistoryChart(propsWithHistory)}
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Unterkunft</th><th>Einträge</th><th>Aktuell</th><th>Erster</th><th>Δ</th><th>Zeitraum</th></tr></thead><tbody>
+          ${propsWithHistory.map(p=>{
+            const h=p.price_history;
+            const first=h[0].price, last=h[h.length-1].price;
+            const delta=last-first;
+            return `<tr onclick="openDetail('${p.id}')" style="cursor:pointer">
+              <td><strong>${escapeHtml(p.name)}</strong></td>
+              <td>${h.length}</td>
+              <td>${fmtPrice(last)}</td>
+              <td>${fmtPrice(first)}</td>
+              <td style="color:${delta<0?'var(--success)':delta>0?'var(--danger)':'inherit'}">${delta<0?'▼':'▲'} ${fmtPrice(Math.abs(delta))}</td>
+              <td style="font-size:0.8rem;color:var(--text-dim)">${fmtDate(h[0].date)} – ${fmtDate(h[h.length-1].date)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>
+      </div>
+    `}
+  `;
+}
+function renderHistoryChart(propsWithHistory){
+  if(!state.historyProperty&&propsWithHistory.length) state.historyProperty=propsWithHistory[0].id;
+  const p=propsWithHistory.find(x=>x.id===state.historyProperty)||propsWithHistory[0];
+  if(!p) return '';
+  return `<h3 style="margin-bottom:0.75rem;font-size:1.1rem">${escapeHtml(p.name)}</h3><canvas id="detailChart" class="chart"></canvas>`;
+}
+
+/* ============================================================
+   Chart
+   ============================================================ */
+function drawChart(canvas,history){
+  if(!canvas||!history||history.length<2) return;
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=rect.height*dpr;
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  const W=rect.width, H=rect.height;
+  const pad={top:20,right:20,bottom:30,left:55};
+  const innerW=W-pad.left-pad.right, innerH=H-pad.top-pad.bottom;
+  const prices=history.map(h=>h.price);
+  const min=Math.min(...prices), max=Math.max(...prices);
+  const range=max-min||1;
+  const stepX=innerW/(history.length-1);
+  ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--sand-200')||'#e0d3bd';
+  ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.top+(innerH*i/4);
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+innerW,y); ctx.stroke();
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text-dim')||'#786b5e';
+    ctx.font='11px Inter, sans-serif'; ctx.textAlign='right';
+    const val=max-(range*i/4);
+    ctx.fillText(Math.round(val)+'€',pad.left-8,y+4);
+  }
+  ctx.beginPath();
+  history.forEach((h,i)=>{
+    const x=pad.left+stepX*i;
+    const y=pad.top+innerH-((h.price-min)/range)*innerH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.left+innerW,pad.top+innerH); ctx.lineTo(pad.left,pad.top+innerH); ctx.closePath();
+  ctx.fillStyle='rgba(63,124,99,0.15)'; ctx.fill();
+  ctx.beginPath();
+  history.forEach((h,i)=>{
+    const x=pad.left+stepX*i;
+    const y=pad.top+innerH-((h.price-min)/range)*innerH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='#254e3f'; ctx.lineWidth=2; ctx.stroke();
+  history.forEach((h,i)=>{
+    const x=pad.left+stepX*i;
+    const y=pad.top+innerH-((h.price-min)/range)*innerH;
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#cba94f'; ctx.fill();
+    ctx.strokeStyle='#254e3f'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text-dim')||'#786b5e';
+  ctx.font='11px Inter, sans-serif'; ctx.textAlign='center';
+  [0,Math.floor(history.length/2),history.length-1].forEach(i=>{
+    const x=pad.left+stepX*i;
+    const d=new Date(history[i].date);
+    ctx.fillText(d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}),x,H-8);
+  });
+}
+
+/* ============================================================
+   Collections View
+   ============================================================ */
+function renderCollectionsView(){
+  const c=state.collections;
+  return `
+    <div class="page-header">
+      <div class="page-title"><small>Sammlungen</small><h1>Favoriten & Sammlungen</h1></div>
+      <button class="btn btn-primary" onclick="promptNewCollection()">+ Neue Sammlung</button>
+    </div>
+    ${c.length===0?`<div class="empty-state"><h3>Noch keine Sammlungen</h3><p>Erstelle Sammlungen wie „Wellness-Wochenende" oder „Gourmet-Hotels".</p><button class="btn btn-primary" onclick="promptNewCollection()">Erste Sammlung anlegen</button></div>`:`
+      ${c.map(name=>{
+        const items=state.properties.filter(p=>(p.collections||[]).includes(name));
+        return `
+          <div style="margin-bottom:2.5rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+              <h2 style="font-size:1.3rem">${escapeHtml(name)} <span style="font-size:0.9rem;color:var(--text-dim);font-family:Inter">(${items.length})</span></h2>
+              <button class="btn btn-ghost btn-sm" onclick="deleteCollection('${escapeHtml(name)}')">Löschen</button>
+            </div>
+            ${items.length===0?`<p style="color:var(--text-dim);font-size:0.9rem">Keine Unterkünfte in dieser Sammlung.</p>`
+              :`<div class="properties-grid">${items.map(renderPropertyCard).join('')}</div>`}
+          </div>`;
+      }).join('')}
+    `}
+  `;
+}
+
+/* ============================================================
+   Settings
+   ============================================================ */
+function renderSettings(){
+  const w=state.settings.weights;
+  const total=w.price_value+w.dinner_quality+w.spa_wellness+w.property_quality+w.personal_rating;
+  const ctxNights=nightsBetween(state.compareContext.checkIn,state.compareContext.checkOut);
+  return `
+    <div class="page-header"><div class="page-title"><small>Einstellungen</small><h1>Konfiguration</h1></div></div>
+    <div class="card" style="padding:2rem;max-width:640px;margin-bottom:1.5rem">
+      <h3 style="margin-bottom:1.25rem;font-size:1.1rem">Bewertungsgewichtung</h3>
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem">Summe: <strong style="color:${total===100?'var(--success)':'var(--warning)'}">${total} %</strong>${total!==100?' (wird normalisiert)':''}</p>
+      ${weightSlider('price_value','Preis-Leistung',w.price_value)}
+      ${weightSlider('dinner_quality','Dinner-Qualität',w.dinner_quality)}
+      ${weightSlider('spa_wellness','Spa & Wellness',w.spa_wellness)}
+      ${weightSlider('property_quality','Unterkunftsqualität',w.property_quality)}
+      ${weightSlider('personal_rating','Persönliche Bewertung',w.personal_rating)}
+    </div>
+    <div class="card" style="padding:2rem;max-width:640px;margin-bottom:1.5rem">
+      <h3 style="margin-bottom:1.25rem;font-size:1.1rem">Standard-Vergleichszeitraum</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Standard-Anreise</label><input type="date" value="${state.compareContext.checkIn||''}" onchange="updateCompareContext('checkIn',this.value)" /></div>
+        <div class="form-group"><label>Standard-Abreise</label><input type="date" value="${state.compareContext.checkOut||''}" onchange="updateCompareContext('checkOut',this.value)" /></div>
+      </div>
+      <div class="form-group"><label>Nächte (auto)</label><input type="text" readonly value="${ctxNights!=null?ctxNights+(ctxNights===1?' Nacht':' Nächte'):'—'}" /></div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:0.5rem;text-transform:none;letter-spacing:0"><input type="checkbox" ${state.compareContext.usePropertyValues?'checked':''} onchange="updateCompareContext('usePropertyValues',this.checked)" /> Eigene Werte pro Unterkunft bevorzugen</label>
+      </div>
+    </div>
+    <div class="card" style="padding:2rem;max-width:640px;margin-bottom:1.5rem">
+      <h3 style="margin-bottom:1.25rem;font-size:1.1rem">Daten</h3>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportData()">Daten exportieren (JSON)</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Daten importieren</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)" />
+        <button class="btn btn-secondary" onclick="printReport()">PDF-Bericht drucken</button>
+        <button class="btn btn-danger" onclick="resetData()">Auf Seed-Daten zurücksetzen</button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-top:1rem">
+        <strong>Bilder</strong> werden in IndexedDB gespeichert und sind <em>nicht</em> im JSON-Export enthalten.
+        Bei „Zurücksetzen" werden auch alle Bilder gelöscht.
+      </p>
+    </div>
+  `;
+}
+function weightSlider(key,label,value){
+  return `<div style="margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem">
+      <label style="font-size:0.85rem;color:var(--text)">${label}</label>
+      <span id="w-${key}" style="font-weight:600;color:var(--forest-700);font-size:0.85rem">${value} %</span>
+    </div>
+    <input type="range" min="0" max="100" value="${value}" oninput="updateWeight('${key}',this.value)" style="width:100%;accent-color:var(--forest-700)" />
+  </div>`;
+}
+function updateWeight(key,value){
+  state.settings.weights[key]=Number(value);
+  document.getElementById('w-'+key).textContent=value+' %';
+  saveSettings();
+}
+
+/* ============================================================
+   Import/Export
+   ============================================================ */
+function exportData(){
+  const data={
+    properties:state.properties, collections:state.collections, settings:state.settings,
+    compareContext:state.compareContext, exportedAt:new Date().toISOString(), version:'v5'
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='stayselect-export-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Export heruntergeladen (Bilder nicht enthalten)');
+}
+function importData(event){
+  const file=event.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(Array.isArray(data.properties)){
+        if(confirm(`${data.properties.length} Unterkünfte importieren? Bestehende werden ersetzt. Bilder bleiben im Browser.`)){
+          state.properties=data.properties.map(migrateProperty);
+          if(Array.isArray(data.collections)) state.collections=data.collections;
+          if(data.settings) state.settings={...DEFAULT_SETTINGS,...data.settings};
+          if(data.compareContext){ state.compareContext={...state.compareContext,...data.compareContext}; if(state.compareContext.nights) delete state.compareContext.nights; }
+          save(); saveSettings(); applyTheme();
+          toast('Import erfolgreich');
+          render();
+        }
+      } else toast('Ungültiges Format');
+    }catch(err){ toast('Import fehlgeschlagen: '+err.message); }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+async function resetData(){
+  if(!confirm('Alle Daten zurücksetzen? Auch alle hochgeladenen Bilder werden gelöscht.')) return;
+  // Bilder löschen
+  try{
+    for(const p of state.properties) await imgDB.delByProperty(p.id);
+  }catch(e){}
+  clearAllImageCache();
+  state.properties=JSON.parse(JSON.stringify(SEED_PROPERTIES)).map(migrateProperty);
+  state.settings={...DEFAULT_SETTINGS};
+  state.collections=[];
+  state.compareSelection=[];
+  state.lastSearch=null;
+  state.searchContext=null;
+  state.compareContext={checkIn:'',checkOut:'',usePropertyValues:false,adults:2};
+  state.galleryIndex={};
+  save(); saveSettings(); applyTheme();
+  toast('Zurückgesetzt');
+  setView('dashboard');
+}
+function printReport(){ window.print(); }
+
+/* ============================================================
+   Init
+   ============================================================ */
+load();
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click',()=>setView(btn.dataset.view));
+});
+render();
+</script>
+</body>
+</html>
